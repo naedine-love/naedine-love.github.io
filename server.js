@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const crypto = require("node:crypto");
 const admin = require("firebase-admin");
-const questions = require("./protected-questions.json");
+const questions = (() => { try { return JSON.parse(process.env.PROTECTED_QUESTIONS_JSON || "null"); } catch { return null; } })();
 
 const app = express();
 app.set("trust proxy", 1);
@@ -33,7 +33,7 @@ function sendError(res, status, code, message) {
 }
 
 function requireConfig(res) {
-  if (!firebaseReady || !BOT_TOKEN) {
+  if (!firebaseReady || !BOT_TOKEN || !questions) {
     sendError(res, 503, "firebase_not_configured", "Сервер проверки ещё не настроен.");
     return false;
   }
@@ -142,7 +142,7 @@ async function grantIfSubscribed(uid, telegramId, profile, res) {
 }
 
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, firebaseConfigured: firebaseReady, telegramConfigured: !!BOT_TOKEN });
+  res.json({ ok: true, firebaseConfigured: firebaseReady, telegramConfigured: !!BOT_TOKEN, questionsConfigured: !!questions });
 });
 
 app.post("/api/telegram/verify", async (req, res) => {
