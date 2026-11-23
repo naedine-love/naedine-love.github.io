@@ -213,7 +213,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
       }
       await grantAccess(snap.data().uid, telegramUser);
       await ref.set({ status: "verified", telegramId: String(telegramUser.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-      await sendBotPhoto(chatId, "💗 Отлично, подписка подтверждена!\\n\\nВам открыты все оставшиеся темы «Наедине».\\n\\nВас ждут важные вопросы, честные ответы и новые поводы стать ближе друг к другу.\\n\\nВозвращайтесь на сайт и продолжайте ваше путешествие вдвоём. ♡", returnKeyboard());
+      await sendBotPhoto(chatId, "💗 Ура, вы с нами!\\n\\nДоступ ко всем оставшимся темам открыт.\\n\\nВпереди вас ждут искренние ответы, важные вопросы и маленькие открытия друг о друге.\\n\\nПродолжайте ваше путешествие вдвоём. ♡", returnKeyboard());
       return;
     }
 
