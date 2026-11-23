@@ -481,7 +481,6 @@ function showPaywall(){el("paywallModal").classList.add("show")}
 function closePaywall(){el("paywallModal").classList.remove("show")}
 el("paywallClose").onclick=closePaywall;
 el("paywallModal").addEventListener("click",function(e){if(e.target===el("paywallModal"))closePaywall()});
-el("telegramChannel").href=CHANNEL_URL;
 el("paywallUnlock").onclick=startTelegramBotFlow;
 el("paywallInvite").onclick=function(){
   var data={title:"Наедине — вопросы для двоих",text:"Давай пройдём «Наедине» вместе ❤️ Это вопросы, которые помогают стать ближе друг к другу.",url:location.href};
