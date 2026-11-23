@@ -104,12 +104,23 @@ async function grantAccess(uid, telegramUser) {
     active: true, channel: CHANNEL_ID, checkedAt: now
   }, { merge: true });
 }
-async function sendBotMessage(chatId, text) {
+async function sendBotMessage(chatId, text, replyMarkup) {
+  const payload = { chat_id: chatId, text };
+  if (replyMarkup) payload.reply_markup = replyMarkup;
   return fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/sendMessage", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text })
+    body: JSON.stringify(payload)
   });
+}
+function subscriptionKeyboard(nonce) {
+  return { inline_keyboard: [
+    [{ text: "♡ Подписаться на канал", url: "https://t.me/zhenazekaa" }],
+    [{ text: "✓ Я подписался", callback_data: "check_" + nonce }]
+  ] };
+}
+function returnKeyboard() {
+  return { inline_keyboard: [[{ text: "♡ Вернуться к колоде", url: "https://naedine-love.github.io/" }]] };
 }
 
 app.get("/health", (_req, res) => {
@@ -159,38 +170,69 @@ app.post("/api/telegram/status", async (req, res) => {
   return res.json({ ok: true, status: "verified", blocks: questions });
 });
 
-/* Telegram webhook: принимает /start <nonce>, сам проверяет членство и связывает его с сессией сайта. */
+/* Telegram webhook: показывает подписку на канал и проверяет её по кнопке. */
 app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
   if (!firebaseReady || !BOT_TOKEN) return res.sendStatus(503);
   const headerSecret = req.get("x-telegram-bot-api-secret-token") || "";
   if (headerSecret !== WEBHOOK_KEY) return res.sendStatus(401);
   res.sendStatus(200);
   try {
-    const message = req.body && req.body.message;
-    const text = String(message && message.text || "");
+    const update = req.body || {};
+    if (update.callback_query) {
+      const query = update.callback_query;
+      const callbackData = String(query.data || "");
+      const match = callbackData.match(/^check_([A-Za-z0-9_-]{20,40})$/);
+      const chatId = query.message && query.message.chat && query.message.chat.id;
+      const telegramUser = query.from;
+      await fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/answerCallbackQuery", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ callback_query_id: query.id, text: "Проверяю подписку…" })
+      });
+      if (!match || !chatId || !telegramUser) return;
+      const nonce = match[1];
+      const ref = admin.firestore().collection("telegramLoginSessions").doc(nonce);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().status !== "pending" || Number(snap.data().expiresAt) < Date.now()) {
+        await sendBotMessage(chatId, "Ссылка проверки устарела. Вернитесь на сайт и нажмите «Подписаться на Telegram» ещё раз.");
+        return;
+      }
+      const subscribed = await getMembership(telegramUser.id);
+      if (!subscribed) {
+        await sendBotMessage(chatId, "Пока не вижу вашу подписку на канал «Наедине» 💚\n\nПодпишитесь на канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
+        return;
+      }
+      await grantAccess(snap.data().uid, telegramUser);
+      await ref.set({ status: "verified", telegramId: String(telegramUser.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await sendBotMessage(chatId, "Подписка подтверждена! 💚\n\nДоступ к оставшимся пяти блокам открыт. Возвращайтесь к вашей колоде.", returnKeyboard());
+      return;
+    }
+
+    const message = update.message;
+    const messageText = String(message && message.text || "");
     const chatId = message && message.chat && message.chat.id;
     const from = message && message.from;
-    if (!chatId || !from || !/^\/start(?:\s+([A-Za-z0-9_-]{20,40}))?/.test(text)) return;
-    const match = text.match(/^\/start(?:\s+([A-Za-z0-9_-]{20,40}))?/);
-    const nonce = match && match[1];
+    const startMatch = messageText.match(/^\/start(?:\s+([A-Za-z0-9_-]{20,40}))?/);
+    if (!chatId || !from || !startMatch) return;
+    const nonce = startMatch[1];
     if (!nonce) {
-      await sendBotMessage(chatId, "Привет! Чтобы открыть полную версию «Наедине», вернитесь на сайт и нажмите «Подтвердить подписку».");
+      await sendBotMessage(chatId, "Привет! ❤️ Чтобы открыть полную колоду, вернитесь на сайт «Наедине» и нажмите «Подписаться на Telegram».");
       return;
     }
     const ref = admin.firestore().collection("telegramLoginSessions").doc(nonce);
     const snap = await ref.get();
     if (!snap.exists || snap.data().status !== "pending" || Number(snap.data().expiresAt) < Date.now()) {
-      await sendBotMessage(chatId, "Ссылка проверки устарела. Вернитесь на сайт и нажмите кнопку ещё раз.");
+      await sendBotMessage(chatId, "Ссылка проверки устарела. Вернитесь на сайт и нажмите «Подписаться на Telegram» ещё раз.");
       return;
     }
     const subscribed = await getMembership(from.id);
     if (!subscribed) {
-      await sendBotMessage(chatId, "Пока не вижу вашу подписку на канал «Наедине» 💚\n\n1. Подпишитесь на канал: https://t.me/zhenazekaa\n2. Вернитесь сюда и нажмите «Запустить» ещё раз по новой ссылке с сайта.");
+      await sendBotMessage(chatId, "Привет! ❤️\n\nЧтобы открыть оставшиеся 5 блоков колоды для пар, подпишитесь на наш Telegram-канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
       return;
     }
     await grantAccess(snap.data().uid, from);
     await ref.set({ status: "verified", telegramId: String(from.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    await sendBotMessage(chatId, "Подписка подтверждена! 💚\n\nВозвращайтесь на сайт «Наедине» — оставшиеся пять тем уже открываются.");
+    await sendBotMessage(chatId, "Вы уже подписаны! 💚\n\nДоступ к оставшимся пяти блокам открыт. Возвращайтесь к вашей колоде.", returnKeyboard());
   } catch (error) {
     console.error("Telegram webhook error:", error.message);
   }
@@ -229,7 +271,7 @@ async function configureWebhook() {
       body: JSON.stringify({
         url: WEBHOOK_URL,
         secret_token: WEBHOOK_KEY,
-        allowed_updates: ["message"]
+        allowed_updates: ["message", "callback_query"]
       })
     });
     const result = await response.json();
