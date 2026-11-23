@@ -8,10 +8,11 @@ Render web service for verifying Telegram channel membership before returning pr
 - `TELEGRAM_CHANNEL_ID` — defaults to `@zhenazekaa`.
 - `FIREBASE_SERVICE_ACCOUNT_JSON` — complete Firebase service-account JSON.
 - `FIREBASE_PROJECT_ID` — `koloda-app` (optional if present in service-account JSON).
+- `PROTECTED_QUESTIONS_JSON` — private JSON object containing blocks 3–7; keep this only in Render environment variables, never in the public repository.
 
 The bot must be an administrator of @zhenazekaa. Configure the Telegram Login Widget domain with @BotFather for `naedine-love.github.io` using `/setdomain`.
 
-The API verifies Firebase ID tokens, validates Telegram Login Widget HMAC data, calls getChatMember on every access check, stores the Telegram binding privately, and grants/removes a server-only Firestore entitlement. Protected questions live only in this backend repository file, not in the public site HTML.
+The API verifies Firebase ID tokens, validates Telegram Login Widget HMAC data, calls getChatMember on every access check, stores the Telegram binding privately, and grants/removes a server-only Firestore entitlement. Protected questions are loaded from the private Render environment variable, not from the public repository or site HTML.
 
 ## Endpoints
 
