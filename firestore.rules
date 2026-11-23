@@ -14,6 +14,12 @@ service cloud.firestore {
         && request.auth.uid in roomData(roomId).members;
     }
 
+    function hasTelegramAccess() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid)/entitlements/telegram)
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)/entitlements/telegram).data.active == true;
+    }
+
     function validBlockId(docId, block, uid) {
       return (block == 1 && docId == '1_' + uid)
         || (block == 2 && docId == '2_' + uid)
@@ -98,6 +104,7 @@ service cloud.firestore {
         // The owner can read their own answer. The partner can read it only
         // after BOTH players have written their completion record for this block.
         allow get: if isMember(roomId)
+          && (resource.data.block <= 2 || hasTelegramAccess())
           && (
             request.auth.uid == resource.data.uid
             || (
@@ -116,6 +123,7 @@ service cloud.firestore {
           && request.resource.data.block is int
           && request.resource.data.block >= 1
           && request.resource.data.block <= 7
+          && (request.resource.data.block <= 2 || hasTelegramAccess())
           && validBlockId(answerId, request.resource.data.block, request.auth.uid)
           && request.resource.data.a is map
           && request.resource.data.ts is number
@@ -169,6 +177,7 @@ service cloud.firestore {
           && request.resource.data.block is int
           && request.resource.data.block >= 1
           && request.resource.data.block <= 7
+          && (request.resource.data.block <= 2 || hasTelegramAccess())
           && validBlockId(doneId, request.resource.data.block, request.auth.uid)
           && request.resource.data.name is string
           && request.resource.data.ts is number
