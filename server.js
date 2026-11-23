@@ -213,7 +213,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
       }
       await grantAccess(snap.data().uid, telegramUser);
       await ref.set({ status: "verified", telegramId: String(telegramUser.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-      await sendBotMessage(chatId, "Подписка подтверждена! 💚\n\nДоступ к оставшимся пяти блокам открыт. Возвращайтесь к вашей колоде.", returnKeyboard());
+      await sendBotPhoto(chatId, "💗 Ура, вы с нами!\\n\\nДоступ к оставшимся темам открыт.\\n\\nВпереди ещё больше вопросов, искренних ответов и маленьких открытий друг о друге.\\n\\nВозвращайтесь к вашей колоде и продолжайте быть ближе. ♡", returnKeyboard());
       return;
     }
 
@@ -241,7 +241,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
     }
     await grantAccess(snap.data().uid, from);
     await ref.set({ status: "verified", telegramId: String(from.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    await sendBotMessage(chatId, "Вы уже подписаны! 💚\n\nДоступ к оставшимся пяти блокам открыт. Возвращайтесь к вашей колоде.", returnKeyboard());
+    await sendBotPhoto(chatId, "💗 Вы уже с нами!\\n\\nДоступ к оставшимся пяти блокам открыт.\\n\\nВпереди ещё больше вопросов, искренних ответов и маленьких открытий друг о друге. ♡", returnKeyboard());
   } catch (error) {
     console.error("Telegram webhook error:", error.message);
   }
