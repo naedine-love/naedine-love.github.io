@@ -449,13 +449,11 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
     <p>Вы прошли первые два блока — это только начало. Впереди ещё пять тем: совместная жизнь, мечты, важные разговоры и близость.</p>
     <p><strong>Подпишитесь на Telegram-канал «Наедине»</strong>, чтобы получить доступ к продолжению и пройти оставшиеся темы вместе.</p>
     <div class="paywall-actions">
-      <a class="btn main" id="telegramChannel" href="https://t.me/zhenazekaa" target="_blank" rel="noopener noreferrer">♡ Подписаться на канал</a>
-      <button class="btn" id="paywallUnlock" type="button">Проверить подписку через Telegram</button>
-      <div id="telegramLoginWidget" aria-live="polite"></div>
+      <button class="btn main" id="paywallUnlock" type="button">♡ Подписаться на Telegram</button>
       <button class="btn" id="paywallInvite" type="button">💌 Пригласить вторую половинку</button>
       <button class="link" id="paywallClose" type="button">Вернуться к пройденным темам</button>
     </div>
-    <p class="paywall-note" id="paywallNote">Подпишитесь на канал, затем войдите через Telegram. Мы проверим подписку автоматически.</p>
+    <p class="paywall-note" id="paywallNote">Откроется наш бот: подпишитесь на канал, нажмите «Я подписался» — и мы автоматически откроем оставшиеся блоки. ❤️</p>
   </div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -483,8 +481,7 @@ function showPaywall(){el("paywallModal").classList.add("show")}
 function closePaywall(){el("paywallModal").classList.remove("show")}
 el("paywallClose").onclick=closePaywall;
 el("paywallModal").addEventListener("click",function(e){if(e.target===el("paywallModal"))closePaywall()});
-el("telegramChannel").href=CHANNEL_URL;
-el("paywallUnlock").onclick=showTelegramLogin;
+el("paywallUnlock").onclick=startTelegramBotFlow;
 el("paywallInvite").onclick=function(){
   var data={title:"Наедине — вопросы для двоих",text:"Давай пройдём «Наедине» вместе ❤️ Это вопросы, которые помогают стать ближе друг к другу.",url:location.href};
   if(navigator.share){navigator.share(data).catch(function(){});return}
@@ -514,37 +511,41 @@ function telegramApi(path,telegramData){
     return data;
   })});
 }
-function showTelegramLogin(){
-  var host=el("telegramLoginWidget");
-  if(host.querySelector("iframe"))return;
-  host.innerHTML="";
-  el("paywallUnlock").textContent="Откройте Telegram ниже";
-  el("paywallNote").textContent="Войдите в Telegram тем аккаунтом, который подписан на канал «Наедине».";
-  var script=document.createElement("script");
-  script.async=true;script.src="https://telegram.org/js/telegram-widget.js?22";
-  script.setAttribute("data-telegram-login","NaedineAccessBot");
-  script.setAttribute("data-size","large");
-  script.setAttribute("data-userpic","false");
-  script.setAttribute("data-onauth","onTelegramAuth(user)");
-  host.appendChild(script);
-}
-window.onTelegramAuth=function(user){
-  var button=el("paywallUnlock");button.disabled=true;button.textContent="Проверяем подписку…";
-  telegramApi("/api/telegram/verify",{telegram:user}).then(function(data){
-    applyTelegramAccess(data);closePaywall();roomMsg("Подписка подтверждена! Все пять тем открыты 💚");
-    openBlock(pendingProtectedBlock||3);
+var telegramPollTimer=null;
+function startTelegramBotFlow(){
+  var button=el("paywallUnlock"),note=el("paywallNote");
+  button.disabled=true;button.textContent="Открываем Telegram…";
+  note.textContent="В боте нажмите «Подписаться на канал», а затем «Я подписался». Мы проверим подписку автоматически.";
+  var popup=null;
+  try{popup=window.open("about:blank","_blank")}catch(e){}
+  telegramApi("/api/telegram/start",{}).then(function(data){
+    if(popup)popup.location.href=data.botUrl;
+    else note.innerHTML='Откройте <a href="'+data.botUrl+'" target="_blank" rel="noopener">бота @NaedineAccessBot</a> и нажмите «Запустить».';
+    button.textContent="Ожидаем подтверждение…";
+    pollTelegramStatus(data.sessionId,0);
   }).catch(function(error){
-    var messages={
-      not_subscribed:"Пока не вижу подписку на канал. Подпишитесь и попробуйте ещё раз.",
-      bot_not_admin:"Бот пока не имеет прав администратора канала. Добавьте @NaedineAccessBot администратором.",
-      telegram_auth_expired:"Время входа истекло. Нажмите кнопку и войдите в Telegram ещё раз.",
-      firebase_not_configured:"Сервер проверки ещё не настроен. Попробуйте немного позже.",
-      telegram_not_linked:"Не удалось связать Telegram с игрой. Войдите через Telegram ещё раз."
-    };
-    el("paywallNote").textContent=messages[error.code]||"Не удалось проверить подписку. Проверьте интернет и попробуйте ещё раз.";
-    button.disabled=false;button.textContent="Проверить подписку через Telegram";
+    if(popup)popup.close();
+    note.textContent=error.code==="server_not_configured"?"Сервер проверки ещё не настроен. Попробуйте позже.":"Не удалось открыть проверку. Проверьте интернет и попробуйте ещё раз.";
+    button.disabled=false;button.textContent="♡ Подписаться на Telegram";
   });
-};
+}
+function pollTelegramStatus(sessionId,attempt){
+  if(attempt>=150){
+    el("paywallNote").textContent="Время ожидания истекло. Нажмите «Подписаться на Telegram» и попробуйте ещё раз.";
+    var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подписаться на Telegram";return;
+  }
+  telegramApi("/api/telegram/status",{sessionId:sessionId}).then(function(data){
+    if(data.status==="verified"){
+      applyTelegramAccess(data);closePaywall();roomMsg("Подписка подтверждена! Все пять тем открыты 💚");
+      openBlock(pendingProtectedBlock||3);return;
+    }
+    telegramPollTimer=setTimeout(function(){pollTelegramStatus(sessionId,attempt+1)},2000);
+  }).catch(function(error){
+    var note=el("paywallNote");
+    note.textContent=error.code==="not_subscribed"?"Пока не вижу подписку. Вернитесь в бота, подпишитесь на канал и нажмите «Я подписался».":"Проверка не завершилась. Нажмите кнопку и попробуйте ещё раз.";
+    var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подписаться на Telegram";
+  });
+}
 function restoreTelegramAccess(){
   var saved=false;try{saved=localStorage.getItem("kp_full_access")==="1"}catch(e){}
   if(!saved)return;
