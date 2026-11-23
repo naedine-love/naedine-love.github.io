@@ -225,7 +225,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
     if (!chatId || !from || !startMatch) return;
     const nonce = startMatch[1];
     if (!nonce) {
-      await sendBotMessage(chatId, "Привет! ❤️ Чтобы открыть полную колоду, вернитесь на сайт «Наедине» и нажмите «Подписаться на Telegram».");
+      await sendBotMessage(chatId, "Привет! ❤️ Чтобы открыть все оставшиеся темы, вернитесь на сайт «Наедине» и нажмите «Подписаться на Telegram».");
       return;
     }
     const ref = admin.firestore().collection("telegramLoginSessions").doc(nonce);
@@ -236,7 +236,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
     }
     const subscribed = await getMembership(from.id);
     if (!subscribed) {
-      await sendBotMessage(chatId, "Привет! ❤️\n\nЧтобы открыть оставшиеся 5 блоков колоды для пар, подпишитесь на наш Telegram-канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
+      await sendBotMessage(chatId, "Привет! ❤️\n\nЧтобы открыть оставшиеся 5 тем, подпишитесь на наш Telegram-канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
       return;
     }
     await grantAccess(snap.data().uid, from);
