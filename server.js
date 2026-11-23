@@ -208,7 +208,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
       }
       const subscribed = await getMembership(telegramUser.id);
       if (!subscribed) {
-        await sendBotMessage(chatId, "Пока не вижу вашу подписку на канал «Наедине» 💚\n\nПодпишитесь на канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
+        await sendBotMessage(chatId, "Пока не вижу вашу подписку на канал «Наедине» 💚 Подпишитесь на канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
         return;
       }
       await grantAccess(snap.data().uid, telegramUser);
@@ -236,7 +236,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
     }
     const subscribed = await getMembership(from.id);
     if (!subscribed) {
-      await sendBotMessage(chatId, "Привет! ❤️\n\nЧтобы открыть оставшиеся 5 тем, подпишитесь на наш Telegram-канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
+      await sendBotMessage(chatId, "Привет! ❤️ Чтобы открыть оставшиеся 5 тем, подпишитесь на наш Telegram-канал, а затем нажмите «Я подписался».", subscriptionKeyboard(nonce));
       return;
     }
     await grantAccess(snap.data().uid, from);
