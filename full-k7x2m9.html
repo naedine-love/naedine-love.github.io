@@ -435,6 +435,7 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
     <p class="room-code-extra">Сохраните код — он понадобится, чтобы вернуться в вашу комнату. Не теряйте его 💚</p>
     <div class="modal-actions">
       <button class="btn main" id="roomCodeCopy">Скопировать код</button>
+      <button class="btn" id="roomCodeInvite">💌 Пригласить вторую половинку</button>
       <button class="btn" id="roomCodeClose">Закрыть</button>
     </div>
     <p id="roomCodeStatus" aria-live="polite"></p>
@@ -613,6 +614,32 @@ async function copyRoomCode(){
   }
 }
 el("roomCodeCopy").onclick=copyRoomCode;
+async function inviteToRoom(){
+  var code=el("roomCodeValue").textContent.trim();
+  if(!code)return;
+  var site=location.href;
+  var message="Давай пройдём «Наедине» вместе ❤️\\nЯ уже создал(а) нашу комнату!\\n\\nКод комнаты: "+code+"\\n\\nОткрой сайт: "+site+"\\nНажми «Войти в комнату», введи этот код — и присоединяйся ко мне 💚";
+  var data={title:"Наедине — приглашение в нашу комнату",text:message,url:site};
+  if(navigator.share){
+    try{await navigator.share(data);el("roomCodeStatus").textContent="Приглашение готово к отправке 💚"}
+    catch(e){if(e&&e.name!=="AbortError")el("roomCodeStatus").textContent="Не удалось открыть меню отправки. Скопируйте приглашение вручную."}
+    return;
+  }
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(message);
+    else throw new Error("clipboard-unavailable");
+    el("roomCodeStatus").textContent="Приглашение с кодом и ссылкой скопировано. Отправьте его партнёру 💚";
+    el("roomCodeInvite").textContent="Скопировано! 💚";
+  }catch(e){
+    var field=document.createElement("textarea");field.value=message;field.style.position="fixed";field.style.opacity="0";
+    document.body.appendChild(field);field.select();
+    var ok=false;try{ok=document.execCommand("copy")}catch(ignore){}
+    field.remove();
+    el("roomCodeStatus").textContent=ok?"Приглашение с кодом и ссылкой скопировано. Отправьте его партнёру 💚":"Не удалось скопировать автоматически. Скопируйте код и ссылку отдельно.";
+    if(ok)el("roomCodeInvite").textContent="Скопировано! 💚";
+  }
+}
+el("roomCodeInvite").onclick=inviteToRoom;
 el("roomCodeClose").onclick=closeRoomCode;
 el("roomCodeModal").addEventListener("click",function(e){if(e.target===el("roomCodeModal"))closeRoomCode()});
 
