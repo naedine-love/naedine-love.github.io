@@ -532,7 +532,7 @@ function startTelegramBotFlow(){
 }
 function pollTelegramStatus(sessionId,attempt){
   if(attempt>=150){
-    el("paywallNote").textContent="Время ожидания истекло. Нажмите кнопку и запустите бота ещё раз.";
+    el("paywallNote").textContent="Время ожидания истекло. Нажмите «Подписаться на Telegram» и попробуйте ещё раз.";
     var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подписаться на Telegram";return;
   }
   telegramApi("/api/telegram/status",{sessionId:sessionId}).then(function(data){
@@ -544,7 +544,7 @@ function pollTelegramStatus(sessionId,attempt){
   }).catch(function(error){
     var note=el("paywallNote");
     note.textContent=error.code==="not_subscribed"?"Пока не вижу подписку. Вернитесь в бота, подпишитесь на канал и нажмите «Я подписался».":"Проверка не завершилась. Нажмите кнопку и попробуйте ещё раз.";
-    var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подтвердить подписку через бота";
+    var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подписаться на Telegram";
   });
 }
 function restoreTelegramAccess(){
