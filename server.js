@@ -90,7 +90,7 @@ async function getMembership(telegramId) {
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: CHANNEL_ID, user_id: telegramId })
+    body: JSON.stringify({ chat_id: CHANNEL_ID, user_id: Number(telegramId) })
   });
   const result = await response.json();
   if (!response.ok || !result.ok) {
