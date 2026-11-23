@@ -449,12 +449,11 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
     <p>Вы прошли первые два блока — это только начало. Впереди ещё пять тем: совместная жизнь, мечты, важные разговоры и близость.</p>
     <p><strong>Подпишитесь на Telegram-канал «Наедине»</strong>, чтобы получить доступ к продолжению и пройти оставшиеся темы вместе.</p>
     <div class="paywall-actions">
-      <a class="btn main" id="telegramChannel" href="https://t.me/zhenazekaa" target="_blank" rel="noopener noreferrer">♡ Подписаться на канал</a>
-      <button class="btn" id="paywallUnlock" type="button">♡ Подтвердить подписку через бота</button>
+      <button class="btn main" id="paywallUnlock" type="button">♡ Подписаться на Telegram</button>
       <button class="btn" id="paywallInvite" type="button">💌 Пригласить вторую половинку</button>
       <button class="link" id="paywallClose" type="button">Вернуться к пройденным темам</button>
     </div>
-    <p class="paywall-note" id="paywallNote">Подпишитесь на канал, затем нажмите кнопку и запустите нашего бота. Он сам проверит подписку — без номера телефона и кодов.</p>
+    <p class="paywall-note" id="paywallNote">Откроется наш бот: подпишитесь на канал, нажмите «Я подписался» — и мы автоматически откроем оставшиеся блоки. ❤️</p>
   </div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -516,8 +515,8 @@ function telegramApi(path,telegramData){
 var telegramPollTimer=null;
 function startTelegramBotFlow(){
   var button=el("paywallUnlock"),note=el("paywallNote");
-  button.disabled=true;button.textContent="Готовим переход в Telegram…";
-  note.textContent="Сейчас откроется наш бот. Нажмите в нём «Запустить» — он проверит подписку автоматически.";
+  button.disabled=true;button.textContent="Открываем Telegram…";
+  note.textContent="В боте нажмите «Подписаться на канал», а затем «Я подписался». Мы проверим подписку автоматически.";
   var popup=null;
   try{popup=window.open("about:blank","_blank")}catch(e){}
   telegramApi("/api/telegram/start",{}).then(function(data){
@@ -528,13 +527,13 @@ function startTelegramBotFlow(){
   }).catch(function(error){
     if(popup)popup.close();
     note.textContent=error.code==="server_not_configured"?"Сервер проверки ещё не настроен. Попробуйте позже.":"Не удалось открыть проверку. Проверьте интернет и попробуйте ещё раз.";
-    button.disabled=false;button.textContent="♡ Подтвердить подписку через бота";
+    button.disabled=false;button.textContent="♡ Подписаться на Telegram";
   });
 }
 function pollTelegramStatus(sessionId,attempt){
   if(attempt>=150){
     el("paywallNote").textContent="Время ожидания истекло. Нажмите кнопку и запустите бота ещё раз.";
-    var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подтвердить подписку через бота";return;
+    var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подписаться на Telegram";return;
   }
   telegramApi("/api/telegram/status",{sessionId:sessionId}).then(function(data){
     if(data.status==="verified"){
@@ -544,7 +543,7 @@ function pollTelegramStatus(sessionId,attempt){
     telegramPollTimer=setTimeout(function(){pollTelegramStatus(sessionId,attempt+1)},2000);
   }).catch(function(error){
     var note=el("paywallNote");
-    note.textContent=error.code==="not_subscribed"?"Пока не вижу подписку. Подпишитесь на канал и повторите проверку через бота.":"Проверка не завершилась. Нажмите кнопку и попробуйте ещё раз.";
+    note.textContent=error.code==="not_subscribed"?"Пока не вижу подписку. Вернитесь в бота, подпишитесь на канал и нажмите «Я подписался».":"Проверка не завершилась. Нажмите кнопку и попробуйте ещё раз.";
     var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подтвердить подписку через бота";
   });
 }
