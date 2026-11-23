@@ -1,0 +1,182 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function roomData(roomId) {
+      return get(/databases/$(database)/documents/rooms/$(roomId)).data;
+    }
+
+    function isMember(roomId) {
+      return signedIn()
+        && request.auth.uid in roomData(roomId).members;
+    }
+
+    function validBlockId(docId, block, uid) {
+      return (block == 1 && docId == '1_' + uid)
+        || (block == 2 && docId == '2_' + uid)
+        || (block == 3 && docId == '3_' + uid)
+        || (block == 4 && docId == '4_' + uid)
+        || (block == 5 && docId == '5_' + uid)
+        || (block == 6 && docId == '6_' + uid)
+        || (block == 7 && docId == '7_' + uid);
+    }
+
+    function finished(roomId, blockKey, uid) {
+      return exists(/databases/$(database)/documents/rooms/$(roomId)/done/$(blockKey + '_' + uid));
+    }
+
+    function allAnswersPresent(roomId, doneId) {
+      let a = get(/databases/$(database)/documents/rooms/$(roomId)/answers/$(doneId)).data.a;
+      return a is map
+        && a.keys().hasAll(['0','1','2','3','4','5','6','7','8','9','10','11','12','13','14'])
+        && a.keys().hasOnly(['0','1','2','3','4','5','6','7','8','9','10','11','12','13','14'])
+        && a['0'] is string && a['0'].size() > 0
+        && a['1'] is string && a['1'].size() > 0
+        && a['2'] is string && a['2'].size() > 0
+        && a['3'] is string && a['3'].size() > 0
+        && a['4'] is string && a['4'].size() > 0
+        && a['5'] is string && a['5'].size() > 0
+        && a['6'] is string && a['6'].size() > 0
+        && a['7'] is string && a['7'].size() > 0
+        && a['8'] is string && a['8'].size() > 0
+        && a['9'] is string && a['9'].size() > 0
+        && a['10'] is string && a['10'].size() > 0
+        && a['11'] is string && a['11'].size() > 0
+        && a['12'] is string && a['12'].size() > 0
+        && a['13'] is string && a['13'].size() > 0
+        && a['14'] is string && a['14'].size() > 0;
+    }
+
+    // Пользователи могут отправлять пожелания, но не читать чужие сообщения.
+    match /suggestions/{suggestionId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(['message', 'category', 'uid', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['message', 'category', 'uid', 'createdAt'])
+        && request.resource.data.message is string
+        && request.resource.data.message.size() >= 5
+        && request.resource.data.message.size() <= 1000
+        && request.resource.data.category is string
+        && request.resource.data.category.size() >= 1
+        && request.resource.data.category.size() <= 80
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.createdAt is number;
+      allow read, update, delete: if false;
+    }
+
+    match /rooms/{roomId} {
+      // Exact room-code lookup is needed to join; collection listing is blocked.
+      // Room documents contain membership only, never answer text.
+      allow get: if signedIn();
+      allow list: if false;
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(['members', 'created'])
+        && request.resource.data.keys().hasOnly(['members', 'created'])
+        && request.resource.data.members is list
+        && request.resource.data.members.size() == 1
+        && request.resource.data.members[0] == request.auth.uid
+        && request.resource.data.created is number;
+
+      // A room can only be joined once by a second authenticated participant.
+      allow update: if signedIn()
+        && resource.data.members is list
+        && resource.data.members.size() == 1
+        && request.resource.data.members is list
+        && request.resource.data.members.size() == 2
+        && request.resource.data.members[0] == resource.data.members[0]
+        && request.resource.data.members[1] == request.auth.uid
+        && request.auth.uid != resource.data.members[0]
+        && request.resource.data.created == resource.data.created
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']);
+
+      allow delete: if false;
+
+      match /answers/{answerId} {
+        // The owner can read their own answer. The partner can read it only
+        // after BOTH players have written their completion record for this block.
+        allow get: if isMember(roomId)
+          && (
+            request.auth.uid == resource.data.uid
+            || (
+              finished(roomId, answerId.split('_')[0], resource.data.uid)
+              && finished(roomId, answerId.split('_')[0], request.auth.uid)
+            )
+          );
+        allow list: if false;
+
+        // One private answer document per player and block. Once that player
+        // finishes the block, their answer becomes immutable.
+        allow create, update: if isMember(roomId)
+          && request.resource.data.keys().hasAll(['uid', 'block', 'a', 'ts'])
+          && request.resource.data.keys().hasOnly(['uid', 'block', 'a', 'ts'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.block is int
+          && request.resource.data.block >= 1
+          && request.resource.data.block <= 7
+          && validBlockId(answerId, request.resource.data.block, request.auth.uid)
+          && request.resource.data.a is map
+          && request.resource.data.ts is number
+          && !finished(roomId, answerId.split('_')[0], request.auth.uid);
+
+        allow delete: if false;
+      }
+
+      match /presence/{uid} {
+        // Each participant can publish only their own lightweight online status.
+        allow get, list: if isMember(roomId);
+        allow create, update: if isMember(roomId)
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasAll(['uid', 'active', 'lastSeen', 'typing', 'typingBlock', 'typingAt'])
+          && request.resource.data.keys().hasOnly(['uid', 'active', 'lastSeen', 'typing', 'typingBlock', 'typingAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.active is bool
+          && request.resource.data.lastSeen is number
+          && request.resource.data.typing is bool
+          && request.resource.data.typingBlock is int
+          && request.resource.data.typingBlock >= 1 && request.resource.data.typingBlock <= 7
+          && request.resource.data.typingAt is number;
+        allow delete: if false;
+      }
+
+      match /progress/{progressId} {
+        // Only numeric progress is shared; answer text is never stored here.
+        allow get, list: if isMember(roomId);
+        allow create, update: if isMember(roomId)
+          && request.resource.data.keys().hasAll(['uid', 'block', 'count', 'updated'])
+          && request.resource.data.keys().hasOnly(['uid', 'block', 'count', 'updated'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.block is int
+          && request.resource.data.block >= 1 && request.resource.data.block <= 7
+          && validBlockId(progressId, request.resource.data.block, request.auth.uid)
+          && request.resource.data.count is int
+          && request.resource.data.count >= 0 && request.resource.data.count <= 15
+          && request.resource.data.updated is number
+          && !finished(roomId, progressId.split('_')[0], request.auth.uid);
+        allow delete: if false;
+      }
+
+      match /done/{doneId} {
+        // Completion flags reveal progress only, not the answer contents.
+        allow get, list: if isMember(roomId);
+
+        allow create, update: if isMember(roomId)
+          && request.resource.data.keys().hasAll(['uid', 'block', 'name', 'ts'])
+          && request.resource.data.keys().hasOnly(['uid', 'block', 'name', 'ts'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.block is int
+          && request.resource.data.block >= 1
+          && request.resource.data.block <= 7
+          && validBlockId(doneId, request.resource.data.block, request.auth.uid)
+          && request.resource.data.name is string
+          && request.resource.data.ts is number
+          && exists(/databases/$(database)/documents/rooms/$(roomId)/answers/$(doneId))
+          && allAnswersPresent(roomId, doneId);
+
+        allow delete: if false;
+      }
+    }
+  }
+}
