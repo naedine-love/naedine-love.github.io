@@ -776,6 +776,69 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
 #game .topbar>#back:active,#game .topbar #rcopycode:active{transform:translateY(1px)!important;filter:brightness(.98)!important}
 @media(max-width:360px){#roomCodeModal .modal-card{padding:23px 17px!important}#roomCodeModal .modal-actions .btn{font-size:.83rem!important;padding:10px 12px!important}}
 
+
+/* Новая палитра главного меню — пудровая роза, сливочный и мягкий лиловый */
+#lobby .menu-actions>.menu-btn,
+#lobby #controw>.return-room-btn,
+#lobby .join-card{
+  box-sizing:border-box!important;
+  border-radius:22px!important;
+  border-width:1px!important;
+  border-style:solid!important;
+  box-shadow:0 8px 18px rgba(119,77,94,.11),0 2px 4px rgba(119,77,94,.055),inset 0 1px 0 rgba(255,255,255,.96),inset 0 -1px 0 rgba(196,151,169,.20)!important;
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease!important;
+}
+#lobby .create-btn{
+  background:linear-gradient(145deg,#F5DDE5 0%,#EBCBD8 58%,#E5C0D0 100%)!important;
+  border-color:#E4C1CF!important;color:#765365!important;
+}
+#lobby .create-btn .menu-icon{color:#B47791!important}
+#lobby .create-btn .menu-label,#lobby .create-btn .menu-label b{color:#765365!important}
+#lobby .create-btn .menu-label small{color:#987486!important}
+#lobby .join-card{
+  background:linear-gradient(145deg,#FFFBFA 0%,#F8EDF0 58%,#F3E4EA 100%)!important;
+  border-color:#EBD8DF!important;
+  box-shadow:0 8px 18px rgba(119,77,94,.09),inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(196,151,169,.18)!important;
+}
+#lobby .join-title{color:#79586A!important}
+#lobby .join-title .menu-icon{color:#B77E96!important}
+#lobby .join-card input{
+  background:rgba(255,255,255,.88)!important;border:1px solid #E7D2DC!important;
+  color:#765365!important;box-shadow:inset 0 2px 4px rgba(119,77,94,.045)!important;
+}
+#lobby .join-btn{
+  background:linear-gradient(145deg,#D6A0B5 0%,#C487A2 58%,#B97894 100%)!important;
+  border:1px solid #BD819B!important;color:#fff!important;
+  box-shadow:0 5px 11px rgba(153,91,119,.22),inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(119,62,88,.13)!important;
+}
+#lobby .local-btn{
+  background:linear-gradient(145deg,#F4EEF4 0%,#EDE4EF 58%,#E7DCEB 100%)!important;
+  border-color:#E1D4E4!important;color:#6E5B70!important;
+}
+#lobby .local-btn .menu-icon{color:#A985B0!important}
+#lobby .local-btn .menu-label b{color:#6E5B70!important}
+#lobby .local-btn .menu-label small{color:#8E7C91!important}
+#lobby .return-room-btn{
+  background:linear-gradient(145deg,#EED5DF 0%,#E5C4D2 58%,#DDB7C9 100%)!important;
+  border-color:#DDB8C8!important;color:#704D60!important;
+}
+#lobby .return-room-btn .menu-icon{color:#A96F89!important}
+#lobby .return-room-btn .menu-label b{color:#704D60!important}
+#lobby .return-room-btn .menu-label small{color:#896779!important}
+#lobby .create-btn:active,#lobby .local-btn:active,#lobby .return-room-btn:active,#lobby .join-btn:active{
+  transform:translateY(1px) scale(.99)!important;filter:brightness(.985)!important;
+  box-shadow:0 3px 8px rgba(119,77,94,.12),inset 0 1px 0 rgba(255,255,255,.85)!important;
+}
+#lobby .create-btn:focus-visible,#lobby .local-btn:focus-visible,#lobby .return-room-btn:focus-visible,#lobby .join-btn:focus-visible{
+  outline:3px solid #D9B2C3!important;outline-offset:3px!important;
+}
+@media(hover:hover){
+  #lobby .create-btn:hover,#lobby .local-btn:hover,#lobby .return-room-btn:hover{
+    transform:translateY(-2px)!important;
+    box-shadow:0 11px 22px rgba(119,77,94,.14),0 2px 5px rgba(119,77,94,.06),inset 0 1px 0 rgba(255,255,255,.98)!important;
+  }
+}
+
 </style>
 </head>
 <body>
