@@ -421,6 +421,45 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
   box-sizing:border-box;
 }
 
+
+/* Единый спокойный стиль кнопок главного меню */
+#lobby .brand-spark{display:none!important}
+#lobby .name-label:before,
+#lobby .name-label:after{content:none!important;display:none!important}
+#lobby .name-label{padding-left:14px!important;padding-right:4px!important}
+#lobby .create-btn,
+#lobby .join-btn,
+#lobby .return-room-btn,
+#lobby .local-btn{
+  background:linear-gradient(145deg,#FFFCFA 0%,#F7EFEC 100%)!important;
+  border:1px solid #E9DDD8!important;
+  color:#536C62!important;
+  box-shadow:0 4px 10px rgba(115,75,72,.075),inset 0 1px 0 rgba(255,255,255,.95)!important;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+}
+#lobby .create-btn .menu-icon,
+#lobby .create-btn .menu-arrow,
+#lobby .join-title .menu-icon,
+#lobby .return-room-btn .menu-icon,
+#lobby .local-btn .menu-icon{color:#B9858E!important}
+#lobby .return-room-btn .menu-label small,
+#lobby .local-btn .menu-label small{color:#8A817D!important}
+#lobby .install-tile{
+  background:linear-gradient(145deg,#FFFCFA 0%,#F7EFEC 100%)!important;
+  border:1px solid #E9DDD8!important;
+  box-shadow:0 4px 10px rgba(115,75,72,.075),inset 0 1px 0 rgba(255,255,255,.95)!important;
+}
+#lobby .install-app-btn{color:#536C62!important}
+#lobby .install-app-btn .menu-icon{color:#B9858E!important}
+#lobby .create-btn:active,
+#lobby .join-btn:active,
+#lobby .return-room-btn:active,
+#lobby .local-btn:active,
+#lobby .install-tile:active{
+  transform:translateY(1px);
+  box-shadow:0 2px 5px rgba(115,75,72,.07),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+
 </style>
 </head>
 <body>
