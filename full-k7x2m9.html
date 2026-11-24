@@ -521,8 +521,8 @@ function startTelegramBotFlow(){
   var popup=null;
   try{popup=window.open("about:blank","_blank")}catch(e){}
   telegramApi("/api/telegram/start",{}).then(function(data){
-    if(popup)popup.location.href=data.botUrl;
-    else note.innerHTML='Откройте <a href="'+data.botUrl+'" target="_blank" rel="noopener">бота @NaedineAccessBot</a> и нажмите «Запустить».';
+    if(popup){try{popup.location.href=data.botUrl}catch(e){}}
+    note.innerHTML='Если Telegram не открылся автоматически, <a href="'+data.botUrl+'" target="_blank" rel="noopener" style="font-weight:700;text-decoration:underline">нажмите здесь, чтобы открыть бота @NaedineAccessBot</a>, затем нажмите «Запустить».';
     button.textContent="Ожидаем подтверждение…";
     pollTelegramStatus(data.sessionId,0);
   }).catch(function(error){
