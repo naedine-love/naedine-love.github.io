@@ -113,13 +113,13 @@ async function sendBotMessage(chatId, text, replyMarkup) {
     body: JSON.stringify(payload)
   });
 }
-const SUCCESS_IMAGE_BASE64 = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABwUFRkVEhwZFxkgHhwiK0cuKycnK1c+QjRHZ1tta2VbZGJygKSLcnmbe2JkjsKQm6mut7m3bonJ18ey1qS0t7D/2wBDAR4gICslK1QuLlSwdWR1sLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLD/wAARCACgAKADASIAAhEBAxEB/8QAGQAAAwEBAQAAAAAAAAAAAAAAAAECAwQF/8QALxAAAgIBAwQAAwcFAQAAAAAAAAECEQMSITEEQVFhEyIyBRRCUnGRoRUjYoGxwf/EABcBAQEBAQAAAAAAAAAAAAAAAAABAgP/xAAdEQEBAQEAAgMBAAAAAAAAAAAAARECITEDElFB/9oADAMBAAIRAxEAPwD27FYrFZh2VY7IsLBjQCUxhAAwAAATAGSxiIpCGAUh0NIZUSxFUFAJDACB0JooTKiAG0INGmUSl7o0cVoW4SkhkoYQAwHQE0FFCAmgoU27SjW/diU0tn9V1SCrAE1JX/0AGIBAAABA7ABFQC70MYVNFdkgodBAMKHQCGHG7MpZ1dRVgkt9NaFRmssn4LU/zKvYXLE5FtqXMdxNq/kVykjUSioqoqgmpjHTGufYxiATJKmmmQ2RYYEjCrHQDKyTaStvYNmrRnShVrdcey9seO5PZLcB2krboj40e1s5ZZXllfbsjSPBG/p+t1lX5WWpKXDOV5dIvjp8jT6DqM2vJ8OL2XP6metRJkoxuUe/YwSyZ56cSvy+yI6SSRs+op8muPqL2u0RD7NXOTK2/wDFGv8AT1HfHkf6SQ8peuW+Ke+n9jU446sc0pKmmdpqOXcyp3thwMTQRM3bIKaFRFiRhQ0gqxiCysmcvXz04oxX4mdSOT7QjeKMvDC8+3LiZ1L6ThhKmdmKSZHeuTNlalS5MviyT3TR6nTY4xnkbXzXz6Np44ZFU4qS9kxm95ceMskssljjzI9PFGOLGox4/wCmD6XH0+fXBv5lw+xpKVKwz1d9NviGkMh42XrnGdRjf+zr6bqI5Y3H/afYazefDvzQWWHhopySIhK0TaRWWqdlaUzHWVGZUxUo0TRo3qRDQJU0A6CiKlskbEVpSYZILLjlB9xIaYR5E4uE2mqaNMeSjt6np1lWqP1L+TzpRcHuqI7c3XoY8l0+50RkpL/w8qGRpnVjzBOudV1bqcH6MMsv7bN+ovNiWlXJOzmxxcnc1XpkrMjDH0t7yW7JT+7Z0/wvZnoNqMfZyPC+pzxxrvy/CDp/HfGexMsht92guG0vBcccI8RX6lyuGxxrJbOjG7DqIqTikt+Sox0ohWiewzNO3RbKgFYmyQYbEU0KiqkpchRUXTIDhmebp4ZlvtLyat2wKm48rN008T3W3lGSk4ntcqmc+XoseTePyP8AgmOs+T9ccMzTN1kjPnnyc+XpcuLfTa8rczjJxZG/F9N8ra2Z1dDiUcevmUv4OKUtcUu9nfgi4RVbCe2O74xuJvxuxN+SHNLg05HSW73ZEpEuTb2NIY63l+xFVjjtbKYP0YRWmMZKWlNfM/ZU9tWiWisd6fmvna+aHQUxUMAgoVDsOwBRMskY2nJWt6KM5w5aSknu4sEVCeq7VNdh2Rju5tpq33KsCrOXq+nU1rgqa5rudFhZFlxwYIKMre7R1fEFPFvcP2COFv6mkRbdJ5Gxxxzn6XlmsYQjwrfsuyppQhGHG78jYWCqnuVCJWNKWrne16KEA7CxAANiQhhTHYgCKBk2FgwMllBQVm2yW2a6Q0ohrC5DWs20oelBdZLUWrLoAmkAmwsoYCsLAdhZNgABYgCqTGSighCKABDEFgUMlMoIAAABshspktBYTENoRFIB0NIoEiqBIoJr/9k=";
+const SUCCESS_IMAGE_URL = "https://images.stockcake.com/public/3/1/1/31146775-fa4c-4de6-9491-cb4f71e9f224_large/intertwined-pastel-hearts-stockcake.jpg";
 async function sendBotPhoto(chatId, caption, replyMarkup) {
   const form = new FormData();
   form.append("chat_id", String(chatId));
   form.append("caption", caption);
   if (replyMarkup) form.append("reply_markup", JSON.stringify(replyMarkup));
-  form.append("photo", new Blob([Buffer.from(SUCCESS_IMAGE_BASE64, "base64")], { type: "image/jpeg" }), "naedine-hearts.jpg");
+  form.append("photo", SUCCESS_IMAGE_URL);
   return fetch("https://api.telegram.org/bot" + BOT_TOKEN + "/sendPhoto", { method: "POST", body: form });
 }
 function subscriptionKeyboard(nonce) {
