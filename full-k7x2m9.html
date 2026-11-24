@@ -714,6 +714,53 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
 #lobby .install-app-btn{color:#795565!important}
 #lobby .install-app-btn .menu-icon,#lobby .install-app-btn .menu-arrow{color:#BD8298!important}
 
+
+/* Исправленная кнопка входа по коду: текст и стрелка не пересекаются */
+#lobby .join-btn{
+  position:relative!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:56px!important;
+  height:auto!important;
+  padding:13px 46px 13px 18px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  line-height:1.25!important;
+  font-family:"Manrope",system-ui,sans-serif!important;
+  font-size:clamp(.88rem,3.8vw,.98rem)!important;
+  font-weight:800!important;
+  letter-spacing:0!important;
+  text-align:center!important;
+}
+#lobby .join-btn .join-btn-label{
+  display:block!important;
+  flex:0 1 auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:normal!important;
+  overflow-wrap:normal!important;
+  line-height:1.25!important;
+  text-align:center!important;
+}
+#lobby .join-btn:after{
+  position:absolute!important;
+  right:17px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  font-size:1.2rem!important;
+  line-height:1!important;
+}
+#lobby .join-btn:active:after{transform:translate(3px,-50%)!important}
+@media(max-width:360px){
+  #lobby .join-btn{padding-left:12px!important;padding-right:40px!important;font-size:.88rem!important}
+  #lobby .join-btn:after{right:13px!important}
+}
+
 </style>
 </head>
 <body>
@@ -737,7 +784,7 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
     <section class="join-card">
       <div class="join-title"><span class="menu-icon">↪</span><span>Войти по коду</span></div>
       <input id="rcode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Код комнаты">
-      <button class="btn menu-btn join-btn" id="rjoin" type="button">Присоединиться</button>
+      <button class="btn menu-btn join-btn" id="rjoin" type="button"><span class="join-btn-label">Присоединиться</span></button>
     </section>
     <button class="btn menu-btn local-btn" id="plocal" type="button">
       <span class="menu-icon">♡</span>
