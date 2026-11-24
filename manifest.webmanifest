@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "Наедине — вопросы для двоих",
+  "short_name": "Наедине",
+  "description": "Время стать ближе друг к другу",
+  "lang": "ru",
+  "start_url": "/full-k7x2m9.html?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F8EEE9",
+  "theme_color": "#F8EEE9",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
