@@ -118,6 +118,15 @@ async function grantAccess(uid, telegramUser) {
     active: true, channel: CHANNEL_ID, checkedAt: now
   }, { merge: true });
 }
+async function grantDeviceAccess(deviceKeyHash, telegramUser) {
+  if (!deviceKeyHash) return;
+  await admin.firestore().collection("deviceEntitlements").doc(deviceKeyHash).set({
+    telegramId: String(telegramUser.id),
+    active: true,
+    channel: CHANNEL_ID,
+    checkedAt: admin.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+}
 async function sendBotMessage(chatId, text, replyMarkup) {
   const payload = { chat_id: chatId, text };
   if (replyMarkup) payload.reply_markup = replyMarkup;
@@ -297,9 +306,11 @@ app.post("/api/telegram/start", async (req, res) => {
   const user = await firebaseUser(req, res);
   if (!user) return;
   const nonce = crypto.randomBytes(18).toString("base64url");
+  const deviceKey = String(req.body && req.body.deviceKey || "");
+  const deviceKeyHash = /^[a-f0-9]{64}$/i.test(deviceKey) ? sha256(deviceKey) : null;
   const expiresAt = Date.now() + SESSION_TTL_MS;
   await admin.firestore().collection("telegramLoginSessions").doc(nonce).set({
-    uid: user.uid, status: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    uid: user.uid, deviceKeyHash, status: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp(),
     expiresAt
   });
   return res.json({ ok: true, sessionId: nonce, botUrl: "https://t.me/NaedineAccessBot?start=" + nonce });
@@ -314,8 +325,13 @@ app.post("/api/telegram/status", async (req, res) => {
   if (!/^[A-Za-z0-9_-]{20,40}$/.test(sessionId)) return sendError(res, 400, "invalid_session", "Ссылка проверки недействительна.");
   const ref = admin.firestore().collection("telegramLoginSessions").doc(sessionId);
   const snap = await ref.get();
-  if (!snap.exists || snap.data().uid !== user.uid) return sendError(res, 404, "session_not_found", "Сессия проверки не найдена. Нажмите кнопку ещё раз.");
-  const data = snap.data();
+  const data = snap.exists ? snap.data() : null;
+  const deviceKey = String(req.body && req.body.deviceKey || "");
+  const deviceKeyHash = /^[a-f0-9]{64}$/i.test(deviceKey) ? sha256(deviceKey) : null;
+  const sessionMatches = data && (data.deviceKeyHash
+    ? data.deviceKeyHash === deviceKeyHash
+    : data.uid === user.uid);
+  if (!sessionMatches) return sendError(res, 404, "session_not_found", "Сессия проверки не найдена. Нажмите кнопку ещё раз.");
   if (Number(data.expiresAt) < Date.now()) {
     await ref.delete().catch(() => {});
     return sendError(res, 410, "session_expired", "Время проверки истекло. Попробуйте ещё раз.");
@@ -367,6 +383,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
         return;
       }
       await grantAccess(snap.data().uid, telegramUser);
+      await grantDeviceAccess(snap.data().deviceKeyHash, telegramUser);
       await ref.set({ status: "verified", telegramId: String(telegramUser.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       await sendBotPhoto(chatId, "💗 Вы уже подписаны! Все оставшиеся темы «Наедине» для вас открыты. Продолжайте отвечать, делиться сокровенным и узнавать друг друга ещё ближе. ♡", returnKeyboard());
       return;
@@ -429,19 +446,42 @@ app.post("/api/telegram/access", async (req, res) => {
   if (!requireConfig(res)) return;
   const user = await firebaseUser(req, res);
   if (!user) return;
-  const linked = await privateTelegramRef(user.uid).get();
-  if (!linked.exists || !linked.data().telegramId) {
-    await entitlementRef(user.uid).delete().catch(() => {});
-    return sendError(res, 403, "telegram_not_linked", "Сначала подтвердите подписку через бота.");
-  }
-  const telegramId = linked.data().telegramId;
+  const deviceKey = String(req.body && req.body.deviceKey || "");
+  const deviceKeyHash = /^[a-f0-9]{64}$/i.test(deviceKey) ? sha256(deviceKey) : null;
   try {
+    const db = admin.firestore();
+    if (deviceKeyHash) {
+      const deviceRef = db.collection("deviceEntitlements").doc(deviceKeyHash);
+      const deviceSnap = await deviceRef.get();
+      if (deviceSnap.exists && deviceSnap.data().active && deviceSnap.data().telegramId) {
+        const subscribed = await getMembership(deviceSnap.data().telegramId);
+        if (!subscribed) {
+          await deviceRef.delete().catch(() => {});
+          return sendError(res, 403, "not_subscribed", "Подписка на канал «Наедине» не найдена.");
+        }
+        await deviceRef.set({ checkedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        return res.json({ ok: true, blocks: questions });
+      }
+    }
+    const linked = await privateTelegramRef(user.uid).get();
+    if (!linked.exists || !linked.data().telegramId) {
+      await entitlementRef(user.uid).delete().catch(() => {});
+      return sendError(res, 403, "telegram_not_linked", "Сначала подтвердите подписку через бота.");
+    }
+    const telegramId = linked.data().telegramId;
     const subscribed = await getMembership(telegramId);
     if (!subscribed) {
       await entitlementRef(user.uid).delete().catch(() => {});
+      if (deviceKeyHash) await db.collection("deviceEntitlements").doc(deviceKeyHash).delete().catch(() => {});
       return sendError(res, 403, "not_subscribed", "Подписка на канал «Наедине» не найдена.");
     }
     await entitlementRef(user.uid).set({ active: true, channel: CHANNEL_ID, checkedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    if (deviceKeyHash) {
+      await db.collection("deviceEntitlements").doc(deviceKeyHash).set({
+        telegramId: String(telegramId), active: true, channel: CHANNEL_ID,
+        checkedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+    }
     return res.json({ ok: true, blocks: questions });
   } catch (error) {
     return sendError(res, error.code === "bot_not_admin" ? 503 : 502, error.code || "telegram_api_error", error.message);
