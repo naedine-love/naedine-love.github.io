@@ -839,6 +839,36 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
   }
 }
 
+
+/* Одинаковый цвет основных кнопок главного экрана — как у «Присоединиться» */
+#lobby .create-btn,
+#lobby .return-room-btn,
+#lobby .local-btn{
+  background:linear-gradient(145deg,#D9A1B6 0%,#C7829F 100%)!important;
+  border:1px solid #C47E9A!important;
+  color:#fff!important;
+  box-shadow:0 6px 13px rgba(159,91,120,.22),inset 0 1px 0 rgba(255,255,255,.32),inset 0 -2px 0 rgba(125,64,91,.15)!important;
+}
+#lobby .create-btn .menu-label,
+#lobby .create-btn .menu-label b,
+#lobby .create-btn .menu-label small,
+#lobby .return-room-btn .menu-label,
+#lobby .return-room-btn .menu-label b,
+#lobby .return-room-btn .menu-label small,
+#lobby .local-btn .menu-label,
+#lobby .local-btn .menu-label b,
+#lobby .local-btn .menu-label small{color:#fff!important}
+#lobby .create-btn .menu-icon,
+#lobby .create-btn .menu-arrow,
+#lobby .return-room-btn .menu-icon,
+#lobby .return-room-btn .menu-arrow,
+#lobby .local-btn .menu-icon{color:#fff!important}
+#lobby .create-btn:active,
+#lobby .return-room-btn:active,
+#lobby .local-btn:active{
+  background:linear-gradient(145deg,#CC91A9 0%,#B87592 100%)!important;
+}
+
 </style>
 </head>
 <body>
