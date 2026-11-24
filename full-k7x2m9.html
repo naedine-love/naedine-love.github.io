@@ -761,6 +761,21 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
   #lobby .join-btn:after{right:13px!important}
 }
 
+
+/* Финальная полировка кнопок: без стрелки, мягкий объём и единый розовый стиль */
+#lobby .join-btn:after,#lobby .join-btn:active:after{content:none!important;display:none!important}
+#lobby .join-btn{padding-left:14px!important;padding-right:14px!important}
+#roomCodeModal .modal-card{background:linear-gradient(155deg,#FFFCFB 0%,#FFF5F7 100%)!important;border:1px solid #EBD5DD!important;box-shadow:0 24px 64px rgba(104,66,81,.24),inset 0 1px 0 #fff!important}
+#roomCodeModal .modal-actions{gap:9px!important}
+#roomCodeModal .modal-actions .btn{box-sizing:border-box!important;width:100%!important;min-height:46px!important;height:auto!important;padding:11px 15px!important;border-radius:15px!important;font-family:"Manrope",system-ui,sans-serif!important;font-size:.88rem!important;line-height:1.25!important;font-weight:750!important;letter-spacing:0!important;border:1px solid #E6CBD5!important;color:#80586A!important;background:linear-gradient(145deg,#FFFDFD 0%,#F8EAF0 100%)!important;box-shadow:0 5px 11px rgba(145,83,111,.10),inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(218,184,198,.35)!important;transition:transform .16s ease,box-shadow .16s ease,filter .16s ease!important}
+#roomCodeModal .modal-actions #roomCodeCopy{color:#fff!important;border-color:#C47E9A!important;background:linear-gradient(145deg,#D9A1B6 0%,#C7829F 100%)!important;box-shadow:0 7px 14px rgba(159,91,120,.22),inset 0 1px 0 rgba(255,255,255,.35),inset 0 -2px 0 rgba(125,64,91,.14)!important}
+#roomCodeModal .modal-actions #roomCodeInvite{background:linear-gradient(145deg,#FCEFF3 0%,#F4DFE7 100%)!important;border-color:#E8C8D5!important;color:#875D70!important}
+#roomCodeModal .modal-actions #roomCodeClose{min-height:42px!important;background:linear-gradient(145deg,#FFFDFC 0%,#F4EFED 100%)!important;border-color:#E9DEDA!important;color:#817477!important;box-shadow:0 3px 8px rgba(115,75,72,.07),inset 0 1px 0 #fff!important}
+#roomCodeModal .modal-actions .btn:active{transform:translateY(1px)!important;filter:brightness(.98)!important;box-shadow:0 2px 5px rgba(145,83,111,.12)!important}
+#game .topbar>#back,#game .topbar #rcopycode{min-height:40px!important;padding:8px 14px!important;border-radius:999px!important;border:1px solid #E7C9D5!important;color:#80596A!important;background:linear-gradient(145deg,#FFFBFC 0%,#F4E3EA 100%)!important;box-shadow:0 4px 10px rgba(145,83,111,.11),inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(218,184,198,.35)!important;font-family:"Manrope",system-ui,sans-serif!important;font-size:.82rem!important;font-weight:750!important;text-decoration:none!important;line-height:1.2!important}
+#game .topbar>#back:active,#game .topbar #rcopycode:active{transform:translateY(1px)!important;filter:brightness(.98)!important}
+@media(max-width:360px){#roomCodeModal .modal-card{padding:23px 17px!important}#roomCodeModal .modal-actions .btn{font-size:.83rem!important;padding:10px 12px!important}}
+
 </style>
 </head>
 <body>
