@@ -42,7 +42,7 @@ const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || "@zhenazekaa";
 const WEBHOOK_KEY = crypto.createHash("sha256").update("naedine-webhook:" + BOT_TOKEN).digest("hex");
 const WEBHOOK_URL = "https://naedine-telegram-access.onrender.com/telegram/webhook/" + WEBHOOK_KEY;
 const SESSION_TTL_MS = 10 * 60 * 1000;
-const ADMIN_IDS = new Set(String(process.env.ADMIN_TELEGRAM_IDS || "").split(",").map(x => x.trim()).filter(x => /^\\d+$/.test(x)));
+const ADMIN_IDS = new Set(String(process.env.ADMIN_TELEGRAM_IDS || "").split(",").map(x => x.trim()).filter(x => /^\d+$/.test(x)));
 const ADMIN_CHALLENGE_TTL_MS = 2 * 60 * 1000;
 const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 function sha256(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
