@@ -221,6 +221,10 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
     const messageText = String(message && message.text || "");
     const chatId = message && message.chat && message.chat.id;
     const from = message && message.from;
+    if (chatId && from && message && message.chat && message.chat.type === "private" && /^\/myid(?:@NaedineAccessBot)?$/.test(messageText.trim())) {
+      await sendBotMessage(chatId, "Ваш числовой Telegram ID: " + String(from.id) + "\\n\\nОтправьте этот номер в чат с ChatGPT, чтобы настроить закрытый доступ администратора. Не публикуйте его в открытых каналах.");
+      return;
+    }
     const startMatch = messageText.match(/^\/start(?:\s+([A-Za-z0-9_-]{20,40}))?/);
     if (!chatId || !from || !startMatch) return;
     const nonce = startMatch[1];
