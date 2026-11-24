@@ -515,12 +515,24 @@ function applyTelegramAccess(data){
   try{localStorage.setItem("kp_full_access","1")}catch(e){}
   updateOverview();chips();
 }
+function deviceAccessKey(){
+  try{
+    var key=localStorage.getItem("kp_device_access_key");
+    if(!key){
+      var bytes=new Uint8Array(32);crypto.getRandomValues(bytes);
+      key=Array.prototype.map.call(bytes,function(b){return b.toString(16).padStart(2,"0")}).join("");
+      localStorage.setItem("kp_device_access_key",key);
+    }
+    return key;
+  }catch(e){return ""}
+}
 function telegramApi(path,telegramData){
   return authP.then(function(){
     if(!firebase||!firebase.auth().currentUser)throw new Error("auth_required");
     return firebase.auth().currentUser.getIdToken(true);
   }).then(function(token){
-    return fetch(ACCESS_API_URL+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(telegramData||{})});
+    var payload=Object.assign({},telegramData||{},{deviceKey:deviceAccessKey()});
+    return fetch(ACCESS_API_URL+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(payload)});
   }).then(function(response){return response.json().then(function(data){
     if(!response.ok){var error=new Error(data.message||data.error||"telegram_check_failed");error.code=data.code||"telegram_check_failed";throw error}
     return data;
