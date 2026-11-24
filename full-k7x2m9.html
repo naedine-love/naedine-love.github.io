@@ -493,7 +493,20 @@ el("paywallInvite").onclick=function(){
 
 /* ---------- Firebase ---------- */
 var authP=Promise.reject(new Error("nofirebase")); authP.catch(function(){});
-try{if(typeof firebase!=="undefined"){firebase.initializeApp(FB_CFG);db=firebase.firestore();authP=firebase.auth().signInAnonymously().then(function(c){UID=c.user.uid;return UID});authP.catch(function(){})}}catch(e){}
+try{if(typeof firebase!=="undefined"){
+  firebase.initializeApp(FB_CFG);db=firebase.firestore();
+  /* Сохраняем анонимную Firebase-сессию между посещениями сайта. */
+  authP=firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(function(){
+    return new Promise(function(resolve,reject){
+      var unsub=firebase.auth().onAuthStateChanged(function(user){
+        unsub();
+        if(user){UID=user.uid;resolve(UID);return;}
+        firebase.auth().signInAnonymously().then(function(c){UID=c.user.uid;resolve(UID)}).catch(reject);
+      },reject);
+    });
+  });
+  authP.catch(function(){});
+}}catch(e){}
 function applyTelegramAccess(data){
   var blocks=data&&data.blocks||{};
   [3,4,5,6,7].forEach(function(n){if(Array.isArray(blocks[n])&&blocks[n].length===15)B[n]=blocks[n]});
@@ -549,10 +562,13 @@ function pollTelegramStatus(sessionId,attempt){
   });
 }
 function restoreTelegramAccess(){
-  var saved=false;try{saved=localStorage.getItem("kp_full_access")==="1"}catch(e){}
-  if(!saved)return;
-  telegramApi("/api/telegram/access",{}).then(applyTelegramAccess).catch(function(){
-    FULL=false;BLOCKS=[1,2];try{localStorage.removeItem("kp_full_access")}catch(e){}
+  /* Проверяем сохранённое сервером право доступа для постоянного Firebase UID.
+     Локальный флажок не используем как условие — он может быть очищен браузером. */
+  telegramApi("/api/telegram/access",{}).then(applyTelegramAccess).catch(function(error){
+    FULL=false;BLOCKS=[1,2];
+    if(error&&["telegram_not_linked","not_subscribed"].includes(error.code)){
+      try{localStorage.removeItem("kp_full_access")}catch(e){}
+    }
   });
 }
 function roomMsg(t){el("rmsg2").textContent=t;el("gmsg").textContent=t}
