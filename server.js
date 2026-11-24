@@ -42,6 +42,20 @@ const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || "@zhenazekaa";
 const WEBHOOK_KEY = crypto.createHash("sha256").update("naedine-webhook:" + BOT_TOKEN).digest("hex");
 const WEBHOOK_URL = "https://naedine-telegram-access.onrender.com/telegram/webhook/" + WEBHOOK_KEY;
 const SESSION_TTL_MS = 10 * 60 * 1000;
+const ADMIN_IDS = new Set(String(process.env.ADMIN_TELEGRAM_IDS || "").split(",").map(x => x.trim()).filter(x => /^\\d+$/.test(x)));
+const ADMIN_CHALLENGE_TTL_MS = 2 * 60 * 1000;
+const ADMIN_SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+function sha256(value) { return crypto.createHash("sha256").update(String(value)).digest("hex"); }
+function adminAuthorized(req, res, next) {
+  const match = String(req.get("authorization") || "").match(/^Bearer (.+)$/i);
+  if (!match) return sendError(res, 401, "admin_auth_required", "Сначала войдите через Telegram.");
+  const ref = admin.firestore().collection("adminSessions").doc(sha256(match[1]));
+  ref.get().then(snap => {
+    if (!snap.exists || Number(snap.data().expiresAt) < Date.now()) return sendError(res, 401, "admin_session_expired", "Сессия завершилась. Войдите ещё раз.");
+    req.adminSessionRef = ref;
+    next();
+  }).catch(() => sendError(res, 503, "admin_auth_unavailable", "Не удалось проверить доступ администратора."));
+}
 
 function sendError(res, status, code, message) {
   return res.status(status).json({ ok: false, code, message });
@@ -132,6 +146,147 @@ function returnKeyboard() {
   return { inline_keyboard: [[{ text: "♡ Продолжить наше путешествие", url: "https://naedine-love.github.io/" }]] };
 }
 
+
+/* Закрытая статистика: вход подтверждается Telegram ID из серверного allowlist. */
+app.post("/api/admin/login/start", async (_req, res) => {
+  if (!firebaseReady || !BOT_TOKEN || ADMIN_IDS.size === 0) return sendError(res, 503, "admin_not_configured", "Администраторский доступ ещё не настроен.");
+  try {
+    const challengeId = crypto.randomBytes(24).toString("base64url");
+    const expiresAt = Date.now() + ADMIN_CHALLENGE_TTL_MS;
+    await admin.firestore().collection("adminLoginChallenges").doc(challengeId).set({
+      status: "pending", createdAt: admin.firestore.FieldValue.serverTimestamp(), expiresAt
+    });
+    return res.json({ ok: true, challengeId, expiresAt, botUrl: "https://t.me/NaedineAccessBot?start=admin_" + challengeId });
+  } catch (error) {
+    return sendError(res, 503, "admin_login_start_failed", "Не удалось начать вход. Попробуйте ещё раз.");
+  }
+});
+
+app.get("/api/admin/login/status", async (req, res) => {
+  if (!firebaseReady) return sendError(res, 503, "server_not_configured", "Сервер ещё не настроен.");
+  const challengeId = String(req.query.challengeId || "");
+  if (!/^[A-Za-z0-9_-]{24,40}$/.test(challengeId)) return sendError(res, 400, "invalid_challenge", "Ссылка входа недействительна.");
+  const ref = admin.firestore().collection("adminLoginChallenges").doc(challengeId);
+  try {
+    const snap = await ref.get();
+    if (!snap.exists) return sendError(res, 404, "challenge_not_found", "Запрос входа не найден.");
+    const data = snap.data();
+    if (Number(data.expiresAt) < Date.now()) {
+      await ref.delete().catch(() => {});
+      return sendError(res, 410, "challenge_expired", "Время входа истекло. Начните заново.");
+    }
+    if (data.status !== "approved") return res.json({ ok: true, status: "pending" });
+    const token = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = sha256(token);
+    const sessionRef = admin.firestore().collection("adminSessions").doc(tokenHash);
+    const db = admin.firestore();
+    const outcome = await db.runTransaction(async tx => {
+      const fresh = await tx.get(ref);
+      if (!fresh.exists || fresh.data().status !== "approved" || fresh.data().consumed === true || Number(fresh.data().expiresAt) < Date.now()) return false;
+      tx.set(sessionRef, {
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: Date.now() + ADMIN_SESSION_TTL_MS,
+        telegramId: String(fresh.data().telegramId || "")
+      });
+      tx.update(ref, { status: "consumed", consumed: true, consumedAt: admin.firestore.FieldValue.serverTimestamp() });
+      return true;
+    });
+    if (!outcome) return res.json({ ok: true, status: "pending" });
+    return res.json({ ok: true, status: "approved", token, expiresAt: Date.now() + ADMIN_SESSION_TTL_MS });
+  } catch (error) {
+    return sendError(res, 503, "admin_login_status_failed", "Не удалось проверить подтверждение входа.");
+  }
+});
+
+app.get("/api/admin/stats", adminAuthorized, async (req, res) => {
+  const windowKey = ["today", "7d", "all"].includes(String(req.query.window || "7d")) ? String(req.query.window || "7d") : "7d";
+  const now = Date.now();
+  const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
+  const cutoff = windowKey === "today" ? todayStart.getTime() : windowKey === "7d" ? now - 7 * 24 * 60 * 60 * 1000 : 0;
+  try {
+    const db = admin.firestore();
+    const roomSnap = await db.collection("rooms").get();
+    const rooms = roomSnap.docs;
+    const uniqueParticipants = new Set();
+    const blockUsers = Array.from({ length: 7 }, () => new Set());
+    const blockRooms = Array.from({ length: 7 }, () => new Set());
+    const daily = new Map();
+    let completedBlockEvents = 0;
+    let completedToday = 0;
+    let completed7d = 0;
+    let fullyCompletedRooms = 0;
+    let roomsCreatedInWindow = 0;
+    const dayKey = ms => new Date(ms).toISOString().slice(0, 10);
+    const todayKey = dayKey(todayStart.getTime());
+    for (const roomDoc of rooms) {
+      const room = roomDoc.data() || {};
+      const members = Array.isArray(room.members) ? room.members : [];
+      members.forEach(uid => uniqueParticipants.add(String(uid)));
+      if (Number(room.created || 0) >= cutoff) roomsCreatedInWindow++;
+      const doneSnap = await roomDoc.ref.collection("done").get();
+      const perMember = new Map();
+      for (const doneDoc of doneSnap.docs) {
+        const d = doneDoc.data() || {};
+        const block = Number(d.block);
+        const uid = String(d.uid || "");
+        const ts = Number(d.ts || 0);
+        if (!uid || block < 1 || block > 7) continue;
+        completedBlockEvents++;
+        blockUsers[block - 1].add(roomDoc.id + ":" + uid);
+        blockRooms[block - 1].add(roomDoc.id);
+        const set = perMember.get(uid) || new Set(); set.add(block); perMember.set(uid, set);
+        if (ts >= todayStart.getTime()) completedToday++;
+        if (ts >= now - 7 * 24 * 60 * 60 * 1000) completed7d++;
+        if (ts >= cutoff) {
+          const key = dayKey(ts);
+          daily.set(key, (daily.get(key) || 0) + 1);
+        }
+      }
+      if (members.length === 2 && members.every(uid => (perMember.get(String(uid)) || new Set()).size === 7)) fullyCompletedRooms++;
+    }
+    const entSnap = await db.collectionGroup("entitlements").where("active", "==", true).get();
+    const activeTelegramUsers = new Set();
+    let telegramChecksToday = 0, telegramChecks7d = 0;
+    for (const doc of entSnap.docs) {
+      const uid = doc.ref.parent.parent && doc.ref.parent.parent.id;
+      if (uid) activeTelegramUsers.add(uid);
+      const checkedAt = doc.data().checkedAt;
+      const ms = checkedAt && typeof checkedAt.toMillis === "function" ? checkedAt.toMillis() : 0;
+      if (ms >= todayStart.getTime()) telegramChecksToday++;
+      if (ms >= now - 7 * 24 * 60 * 60 * 1000) telegramChecks7d++;
+    }
+    const dailySeries = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now - i * 24 * 60 * 60 * 1000);
+      const key = dayKey(d.getTime());
+      dailySeries.push({ date: key, completions: daily.get(key) || 0 });
+    }
+    return res.json({
+      ok: true,
+      generatedAt: now,
+      window: windowKey,
+      totals: {
+        participants: uniqueParticipants.size,
+        roomsCreated: rooms.length,
+        fullyCompletedRooms,
+        completedBlockEvents,
+        activeTelegramUsers: activeTelegramUsers.size
+      },
+      period: {
+        roomsCreated: roomsCreatedInWindow,
+        completedBlocks: windowKey === "today" ? completedToday : windowKey === "7d" ? completed7d : completedBlockEvents,
+        telegramChecks: windowKey === "today" ? telegramChecksToday : windowKey === "7d" ? telegramChecks7d : activeTelegramUsers.size
+      },
+      blocks: blockUsers.map((users, i) => ({ block: i + 1, participants: users.size, rooms: blockRooms[i].size })),
+      daily: dailySeries
+    });
+  } catch (error) {
+    console.error("Admin stats error:", error.message);
+    return sendError(res, 503, "admin_stats_failed", "Не удалось загрузить статистику.");
+  }
+});
+
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true, firebaseConfigured: firebaseReady, telegramConfigured: !!BOT_TOKEN, questionsConfigured: !!questions });
 });
@@ -221,6 +376,24 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
     const messageText = String(message && message.text || "");
     const chatId = message && message.chat && message.chat.id;
     const from = message && message.from;
+    if (chatId && from && message && message.chat && message.chat.type === "private") {
+      const adminStart = messageText.match(/^\/start\s+admin_([A-Za-z0-9_-]{24,40})$/);
+      if (adminStart) {
+        if (!ADMIN_IDS.has(String(from.id))) {
+          await sendBotMessage(chatId, "У этого аккаунта нет доступа к панели статистики.");
+          return;
+        }
+        const challengeRef = admin.firestore().collection("adminLoginChallenges").doc(adminStart[1]);
+        const challengeSnap = await challengeRef.get();
+        if (!challengeSnap.exists || challengeSnap.data().status !== "pending" || Number(challengeSnap.data().expiresAt) < Date.now()) {
+          await sendBotMessage(chatId, "Запрос входа устарел. Вернитесь на страницу статистики и начните вход заново.");
+          return;
+        }
+        await challengeRef.set({ status: "approved", telegramId: String(from.id), approvedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+        await sendBotMessage(chatId, "Доступ администратора подтверждён 💚 Вернитесь на страницу статистики.");
+        return;
+      }
+    }
     if (chatId && from && message && message.chat && message.chat.type === "private" && /^\/myid(?:@NaedineAccessBot)?$/.test(messageText.trim())) {
       await sendBotMessage(chatId, "Ваш числовой Telegram ID: " + String(from.id) + "\\n\\nОтправьте этот номер в чат с ChatGPT, чтобы настроить закрытый доступ администратора. Не публикуйте его в открытых каналах.");
       return;
