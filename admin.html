@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f8eee9">
+<title>Наедине — статистика</title>
+<style>
+:root{--bg:#f8eee9;--card:#fffdfa;--ink:#29443e;--muted:#78827b;--sage:#557f70;--pink:#e9859a;--line:#efdfda}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Manrope,system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:0 auto;padding:28px 18px 56px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:24px}
+h1{font:600 30px/1.2 Georgia,serif;margin:0 0 6px}h2{font:600 20px Georgia,serif;margin:0 0 16px}
+.sub{color:var(--muted);margin:0}.heart{color:var(--pink);font-size:25px}
+.panel,.metric{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 6px 22px #6c51400a}
+.panel{padding:20px;margin:16px 0}.login{max-width:540px;margin:50px auto;text-align:center;padding:28px}
+button,.linkbtn{border:0;border-radius:999px;padding:12px 18px;background:var(--sage);color:white;font:700 14px inherit;cursor:pointer;text-decoration:none;display:inline-block}
+button:disabled{opacity:.55;cursor:wait}.secondary{background:#f6dce2;color:#825b66}
+.status{color:var(--muted);font-size:13px;margin:14px 0 0;min-height:20px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.metric{padding:17px}.metric small{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}.metric strong{font:600 30px Georgia,serif}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filters button{background:#f4e7e3;color:#6d746e}.filters button.active{background:var(--sage);color:#fff}
+.split{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.barrow{display:grid;grid-template-columns:74px 1fr 42px;gap:10px;align-items:center;margin:12px 0;font-size:13px}
+.track{height:11px;background:#f2e6e2;border-radius:99px;overflow:hidden}.fill{height:100%;background:linear-gradient(90deg,var(--pink),var(--sage));border-radius:99px}
+.days{display:grid;grid-template-columns:repeat(7,1fr);align-items:end;gap:8px;height:160px;margin-top:12px}
+.day{height:100%;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:6px;font-size:10px;color:var(--muted)}
+.day i{display:block;width:100%;max-width:38px;min-height:3px;border-radius:8px 8px 2px 2px;background:var(--sage)}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-size:12px;font-weight:700}
+.note{font-size:12px;color:var(--muted);margin:12px 0 0}
+.hidden{display:none!important}
+@media(max-width:700px){main{padding:20px 13px 40px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.split{grid-template-columns:1fr}h1{font-size:26px}.metric strong{font-size:26px}.panel{padding:16px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><h1>Статистика «Наедине»</h1><p class="sub">Общие показатели проекта · без просмотра ответов участников</p></div><span class="heart">♡</span></header>
+<section id="login" class="panel login">
+  <h2>Закрытая панель</h2>
+  <p class="sub">Вход доступен только двум разрешённым Telegram-аккаунтам.</p>
+  <button id="loginBtn">Войти через Telegram</button>
+  <div id="loginLink" class="hidden" style="margin-top:16px"><a id="botLink" class="linkbtn" target="_blank" rel="noopener">Подтвердить вход в боте</a></div>
+  <p id="loginStatus" class="status" aria-live="polite">Нажмите кнопку и подтвердите вход в Telegram.</p>
+</section>
+<section id="dashboard" class="hidden">
+  <div class="panel" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <div><strong>Общая статистика</strong><p class="sub" id="updated">Загрузка…</p></div>
+    <div class="filters" aria-label="Период">
+      <button data-window="today">Сегодня</button><button data-window="7d" class="active">7 дней</button><button data-window="all">Всё время</button>
+      <button id="logout" class="secondary">Выйти</button>
+    </div>
+  </div>
+  <div class="grid">
+    <article class="metric"><small>Участников</small><strong id="participants">—</strong></article>
+    <article class="metric"><small>Создано комнат</small><strong id="rooms">—</strong></article>
+    <article class="metric"><small>Комнат прошли все 7 блоков</small><strong id="finished">—</strong></article>
+    <article class="metric"><small>Активных Telegram-доступов</small><strong id="telegram">—</strong></article>
+  </div>
+  <div class="split">
+    <section class="panel"><h2>Завершения по блокам</h2><div id="blocks"></div><p class="note">Количество участников, завершивших каждый блок. Один участник может учитываться в разных комнатах.</p></section>
+    <section class="panel"><h2>Активность за 7 дней</h2><div id="days" class="days"></div><p class="note">Завершённые блоки по дням.</p></section>
+  </div>
+  <section class="panel"><h2>Выбранный период</h2><div class="grid">
+    <article class="metric"><small>Создано комнат</small><strong id="periodRooms">—</strong></article>
+    <article class="metric"><small>Завершено блоков</small><strong id="periodBlocks">—</strong></article>
+  </div></section>
+  <p class="note">Панель показывает только агрегированные числа. Тексты ответов, имена и коды комнат сюда не передаются.</p>
+</section>
+</main>
+<script>
+(function(){
+const API="https://naedine-telegram-access.onrender.com";
+const $=id=>document.getElementById(id);
+let token=sessionStorage.getItem("naedine_admin_token")||"";
+let currentWindow="7d",pollHandle=null,challengeId="";
+function showLogin(message){$("login").classList.remove("hidden");$("dashboard").classList.add("hidden");if(message)$("loginStatus").textContent=message}
+function showDashboard(){$("login").classList.add("hidden");$("dashboard").classList.remove("hidden")}
+async function startLogin(){
+  $("loginBtn").disabled=true;$("loginStatus").textContent="Создаём защищённый запрос…";
+  try{
+    const r=await fetch(API+"/api/admin/login/start",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
+    const d=await r.json();if(!r.ok)throw new Error(d.message||"Не удалось начать вход.");
+    challengeId=d.challengeId;$("botLink").href=d.botUrl;$("loginLink").classList.remove("hidden");
+    $("loginStatus").textContent="Откройте бота по кнопке ниже и подтвердите вход. Ссылка действует 2 минуты.";
+    if(pollHandle)clearInterval(pollHandle);
+    pollHandle=setInterval(checkLogin,1800);
+  }catch(e){$("loginStatus").textContent=e.message}
+  finally{$("loginBtn").disabled=false}
+}
+async function checkLogin(){
+  if(!challengeId)return;
+  try{
+    const r=await fetch(API+"/api/admin/login/status?challengeId="+encodeURIComponent(challengeId));
+    const d=await r.json();
+    if(!r.ok){clearInterval(pollHandle);pollHandle=null;challengeId="";$("loginLink").classList.add("hidden");$("loginStatus").textContent=d.message||"Запрос входа завершился.";return}
+    if(d.status==="approved"&&d.token){
+      clearInterval(pollHandle);pollHandle=null;challengeId="";token=d.token;sessionStorage.setItem("naedine_admin_token",token);await loadStats();
+    }
+  }catch(e){}
+}
+async function loadStats(){
+  try{
+    const r=await fetch(API+"/api/admin/stats?window="+currentWindow,{headers:{Authorization:"Bearer "+token}});
+    const d=await r.json();
+    if(!r.ok){if(r.status===401){token="";sessionStorage.removeItem("naedine_admin_token");showLogin(d.message)}else throw new Error(d.message||"Ошибка загрузки");return}
+    showDashboard();$("participants").textContent=d.totals.participants.toLocaleString("ru-RU");
+    $("rooms").textContent=d.totals.roomsCreated.toLocaleString("ru-RU");
+    $("finished").textContent=d.totals.fullyCompletedRooms.toLocaleString("ru-RU");
+    $("telegram").textContent=d.totals.activeTelegramUsers.toLocaleString("ru-RU");
+    $("periodRooms").textContent=d.period.roomsCreated.toLocaleString("ru-RU");
+    $("periodBlocks").textContent=d.period.completedBlocks.toLocaleString("ru-RU");
+    $("updated").textContent="Обновлено: "+new Date(d.generatedAt).toLocaleString("ru-RU");
+    const max=Math.max(1,...d.blocks.map(x=>x.participants));
+    $("blocks").innerHTML=d.blocks.map(x=>'<div class="barrow"><span>Блок '+x.block+'</span><div class="track"><div class="fill" style="width:'+(x.participants/max*100)+'%"></div></div><strong>'+x.participants+'</strong></div>').join("");
+    const dayMax=Math.max(1,...d.daily.map(x=>x.completions));
+    $("days").innerHTML=d.daily.map(x=>'<div class="day"><b>'+x.completions+'</b><i style="height:'+Math.max(3,x.completions/dayMax*105)+'px"></i><span>'+new Date(x.date+"T12:00:00Z").toLocaleDateString("ru-RU",{day:"2-digit",month:"2-digit"})+'</span></div>').join("");
+  }catch(e){showLogin(e.message)}
+}
+$("loginBtn").addEventListener("click",startLogin);
+$("logout").addEventListener("click",()=>{token="";sessionStorage.removeItem("naedine_admin_token");showLogin("Вы вышли из панели.")});
+document.querySelectorAll("[data-window]").forEach(b=>b.addEventListener("click",()=>{currentWindow=b.dataset.window;document.querySelectorAll("[data-window]").forEach(x=>x.classList.toggle("active",x===b));loadStats()}));
+if(token)loadStats();else showLogin();
+})();
+</script>
+</body>
+</html>
