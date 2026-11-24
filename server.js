@@ -253,13 +253,15 @@ app.get("/api/admin/stats", adminAuthorized, async (req, res) => {
       }
       if (members.length === 2 && members.every(uid => (perMember.get(String(uid)) || new Set()).size === 7)) fullyCompletedRooms++;
     }
-    const entSnap = await db.collectionGroup("entitlements").where("active", "==", true).get();
+    const entSnap = await db.collectionGroup("entitlements").get();
     const activeTelegramUsers = new Set();
     let telegramChecksToday = 0, telegramChecks7d = 0;
     for (const doc of entSnap.docs) {
+      const entitlement = doc.data() || {};
+      if (entitlement.active !== true) continue;
       const uid = doc.ref.parent.parent && doc.ref.parent.parent.id;
       if (uid) activeTelegramUsers.add(uid);
-      const checkedAt = doc.data().checkedAt;
+      const checkedAt = entitlement.checkedAt;
       const ms = checkedAt && typeof checkedAt.toMillis === "function" ? checkedAt.toMillis() : 0;
       if (ms >= todayStart.getTime()) telegramChecksToday++;
       if (ms >= now - 7 * 24 * 60 * 60 * 1000) telegramChecks7d++;
