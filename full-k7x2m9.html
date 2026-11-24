@@ -565,6 +565,87 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
              inset 0 1px 2px rgba(100,130,105,.10)!important;
 }
 
+
+/* Финальная палитра главного меню: мягкий шалфей, единый стиль и ясный акцент действия */
+#lobby .create-btn,
+#lobby .local-btn{
+  background:linear-gradient(145deg,#F1F7F0 0%,#E1EDE2 100%)!important;
+  border:1px solid #D0E1D2!important;
+  color:#466454!important;
+  box-shadow:0 7px 17px rgba(68,105,78,.14),
+             0 2px 4px rgba(68,105,78,.06),
+             inset 0 1px 0 rgba(255,255,255,.98),
+             inset 0 -1px 0 rgba(181,207,185,.38)!important;
+}
+#lobby .create-btn .menu-label,
+#lobby .create-btn .menu-label b,
+#lobby .create-btn .menu-label small{color:#466454!important}
+#lobby .create-btn .menu-icon,
+#lobby .local-btn .menu-icon{color:#71947A!important}
+
+/* Войти по коду — заметная карточка, а действие внутри неё выглядит как кнопка */
+#lobby .join-card{
+  background:linear-gradient(145deg,#FFFCF8 0%,#F4F7F0 100%)!important;
+  border:1px solid #DCE6D9!important;
+  box-shadow:0 7px 17px rgba(68,105,78,.10),
+             inset 0 1px 0 rgba(255,255,255,.98)!important;
+}
+#lobby .join-title{color:#496653!important}
+#lobby .join-title .menu-icon{color:#789A80!important}
+#lobby .join-btn{
+  min-height:54px!important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  background:linear-gradient(145deg,#789B80 0%,#5F846A 100%)!important;
+  border:1px solid #557B61!important;
+  border-radius:16px!important;
+  color:#FFFFFF!important;
+  font-size:1rem!important;
+  font-weight:800!important;
+  letter-spacing:.01em!important;
+  text-shadow:0 1px 1px rgba(35,69,45,.18)!important;
+  box-shadow:0 6px 13px rgba(65,105,74,.22),
+             inset 0 1px 0 rgba(255,255,255,.30),
+             inset 0 -2px 0 rgba(45,82,54,.16)!important;
+}
+#lobby .join-btn:after{
+  content:"→";
+  font-size:1.25rem;
+  line-height:1;
+  font-weight:700;
+  transition:transform .16s ease;
+}
+#lobby .join-btn:active{
+  transform:translateY(2px)!important;
+  background:linear-gradient(145deg,#6E9076 0%,#557A60 100%)!important;
+  box-shadow:0 2px 5px rgba(65,105,74,.18),
+             inset 0 1px 2px rgba(35,69,45,.14)!important;
+}
+#lobby .join-btn:active:after{transform:translateX(3px)}
+#lobby .join-btn:focus-visible{outline:3px solid #A8C5AA!important;outline-offset:3px!important}
+
+/* Возврат в комнату чуть темнее, чтобы его легко отличать от остальных */
+#lobby .return-room-btn{
+  background:linear-gradient(145deg,#DDEADD 0%,#C9DDCB 100%)!important;
+  border:1px solid #BBD2BE!important;
+  color:#405F49!important;
+  box-shadow:0 7px 17px rgba(61,96,68,.17),
+             0 2px 4px rgba(61,96,68,.07),
+             inset 0 1px 0 rgba(255,255,255,.98),
+             inset 0 -1px 0 rgba(158,190,164,.42)!important;
+}
+#lobby .return-room-btn .menu-icon,
+#lobby .return-room-btn .menu-arrow{color:#5F8267!important}
+#lobby .return-room-btn .menu-label small{color:#687F6D!important}
+#lobby .create-btn:active,
+#lobby .local-btn:active,
+#lobby .return-room-btn:active{
+  transform:translateY(2px)!important;
+}
+
 </style>
 </head>
 <body>
