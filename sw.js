@@ -1,4 +1,4 @@
-const CACHE_NAME = "naedine-pwa-v1";
+const CACHE_NAME = "naedine-pwa-v2";
 const APP_SHELL = ["/full-k7x2m9.html", "/icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
@@ -13,7 +13,7 @@ self.addEventListener("fetch", event => {
   if (url.origin !== self.location.origin) return;
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).then(response => {
-      if (response && response.ok) {
+      if (response && response.ok && /\/full-k7x2m9\.html$/.test(url.pathname)) {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put("/full-k7x2m9.html", copy));
       }
