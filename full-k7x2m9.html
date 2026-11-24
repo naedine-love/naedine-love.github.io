@@ -460,6 +460,42 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
   box-shadow:0 2px 5px rgba(115,75,72,.07),inset 0 1px 0 rgba(255,255,255,.9)!important;
 }
 
+
+/* Исправление подписи «Создать комнату» и чуть более заметный объём кнопок */
+#lobby .create-btn .menu-label,
+#lobby .create-btn .menu-label b,
+#lobby .create-btn .menu-label small{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:#536C62!important;
+  text-shadow:none!important;
+}
+#lobby .create-btn .menu-icon{color:#B9858E!important}
+#lobby .menu-actions>.menu-btn,
+#lobby .install-tile{
+  box-shadow:0 7px 16px rgba(105,78,75,.12),
+             0 2px 4px rgba(105,78,75,.06),
+             inset 0 1px 0 rgba(255,255,255,.98),
+             inset 0 -1px 0 rgba(220,202,197,.35)!important;
+  border-color:#E5D5D0!important;
+}
+#lobby .join-card{
+  box-shadow:0 7px 16px rgba(105,78,75,.10),
+             inset 0 1px 0 rgba(255,255,255,.98)!important;
+}
+#lobby .join-btn{
+  box-shadow:0 4px 9px rgba(82,112,94,.18),
+             inset 0 1px 0 rgba(255,255,255,.72),
+             inset 0 -2px 0 rgba(78,102,84,.10)!important;
+}
+#lobby .menu-actions>.menu-btn:active,
+#lobby .install-tile:active{
+  transform:translateY(2px)!important;
+  box-shadow:0 2px 5px rgba(105,78,75,.10),
+             inset 0 1px 2px rgba(120,90,85,.08)!important;
+}
+
 </style>
 </head>
 <body>
