@@ -1026,7 +1026,7 @@ button:disabled{opacity:.62!important;cursor:wait!important}
   <textarea id="letterOne" rows="3" maxlength="1200" placeholder="Напиши то, что хочется сказать…"></textarea>
   <label for="letterTwo">Письмо партнёра 2</label>
   <textarea id="letterTwo" rows="3" maxlength="1200" placeholder="Теперь очередь второго партнёра…"></textarea>
-  <button class="btn main" id="copyLetters" type="button">Сохранить письма вместе 💚</button>
+  <button class="btn main" id="copyLetters" type="button">Сохранить письма вместе 💗</button>
   <p id="letterStatus" aria-live="polite"></p>
 </div>
 <div class="suggestion-card" id="suggestionCard">
@@ -1043,7 +1043,7 @@ button:disabled{opacity:.62!important;cursor:wait!important}
     </select>
     <label for="suggestionMessage">Ваше пожелание</label>
     <textarea id="suggestionMessage" maxlength="1000" minlength="5" required placeholder="Например: добавьте вопросы для пар на расстоянии…"></textarea>
-    <button class="btn main" id="suggestionSubmit" type="submit">Отправить пожелание 💚</button>
+    <button class="btn main" id="suggestionSubmit" type="submit">Отправить пожелание 💗</button>
     <p id="suggestionStatus" aria-live="polite"></p>
   </form>
 </div>
@@ -1055,7 +1055,7 @@ button:disabled{opacity:.62!important;cursor:wait!important}
     <h2 id="roomCodeTitle">Комната создана!</h2>
     <p class="modal-hint">Отправьте этот код партнёру, чтобы он подключился к игре.</p>
     <div id="roomCodeValue"></div>
-    <p class="room-code-extra">Отправьте код партнёру, чтобы он присоединился. На этом устройстве ваша комната сохранится автоматически 💚</p>
+    <p class="room-code-extra">Отправьте код партнёру, чтобы он присоединился. На этом устройстве ваша комната сохранится автоматически 💗</p>
     <div class="modal-actions">
       <button class="btn main" id="roomCodeCopy">Скопировать код</button>
       <button class="btn" id="roomCodeInvite">💌 Пригласить вторую половинку</button>
@@ -1121,7 +1121,7 @@ el("paywallUnlock").onclick=startTelegramBotFlow;
 el("paywallInvite").onclick=function(){
   var data={title:"Наедине — вопросы для двоих",text:"Давай пройдём «Наедине» вместе ❤️ Это вопросы, которые помогают стать ближе друг к другу.",url:location.href};
   if(navigator.share){navigator.share(data).catch(function(){});return}
-  try{navigator.clipboard.writeText(data.url).then(function(){el("paywallInvite").textContent="Ссылка скопирована 💚"},function(){el("paywallInvite").textContent="Скопируйте ссылку из адресной строки"})}
+  try{navigator.clipboard.writeText(data.url).then(function(){el("paywallInvite").textContent="Ссылка скопирована 💗"},function(){el("paywallInvite").textContent="Скопируйте ссылку из адресной строки"})}
   catch(e){el("paywallInvite").textContent="Скопируйте ссылку из адресной строки"}
 };
 
@@ -1197,7 +1197,7 @@ function pollTelegramStatus(sessionId,attempt){
   }
   telegramApi("/api/telegram/status",{sessionId:sessionId}).then(function(data){
     if(data.status==="verified"){
-      applyTelegramAccess(data);closePaywall();roomMsg("Подписка подтверждена! Все пять тем открыты 💚");
+      applyTelegramAccess(data);closePaywall();roomMsg("Подписка подтверждена! Все пять тем открыты 💗");
       openBlock(pendingProtectedBlock||3);return;
     }
     telegramPollTimer=setTimeout(function(){pollTelegramStatus(sessionId,attempt+1)},2000);
@@ -1344,25 +1344,25 @@ async function inviteToRoom(){
   var code=el("roomCodeValue").textContent.trim();
   if(!code)return;
   var site=location.href;
-  var message="Давай пройдём «Наедине» вместе ❤️\\nЯ уже создал(а) нашу комнату!\\n\\nКод комнаты: "+code+"\\n\\nОткрой сайт: "+site+"\\nНажми «Войти в комнату», введи этот код — и присоединяйся ко мне 💚";
+  var message="Давай пройдём «Наедине» вместе ❤️\\nЯ уже создал(а) нашу комнату!\\n\\nКод комнаты: "+code+"\\n\\nОткрой сайт: "+site+"\\nНажми «Войти в комнату», введи этот код — и присоединяйся ко мне 💗";
   var data={title:"Наедине — приглашение в нашу комнату",text:message,url:site};
   if(navigator.share){
-    try{await navigator.share(data);el("roomCodeStatus").textContent="Приглашение готово к отправке 💚"}
+    try{await navigator.share(data);el("roomCodeStatus").textContent="Приглашение готово к отправке 💗"}
     catch(e){if(e&&e.name!=="AbortError")el("roomCodeStatus").textContent="Не удалось открыть меню отправки. Скопируйте приглашение вручную."}
     return;
   }
   try{
     if(navigator.clipboard&&navigator.clipboard.writeText)await navigator.clipboard.writeText(message);
     else throw new Error("clipboard-unavailable");
-    el("roomCodeStatus").textContent="Приглашение с кодом и ссылкой скопировано. Отправьте его партнёру 💚";
-    el("roomCodeInvite").textContent="Скопировано! 💚";
+    el("roomCodeStatus").textContent="Приглашение с кодом и ссылкой скопировано. Отправьте его партнёру 💗";
+    el("roomCodeInvite").textContent="Скопировано! 💗";
   }catch(e){
     var field=document.createElement("textarea");field.value=message;field.style.position="fixed";field.style.opacity="0";
     document.body.appendChild(field);field.select();
     var ok=false;try{ok=document.execCommand("copy")}catch(ignore){}
     field.remove();
-    el("roomCodeStatus").textContent=ok?"Приглашение с кодом и ссылкой скопировано. Отправьте его партнёру 💚":"Не удалось скопировать автоматически. Скопируйте код и ссылку отдельно.";
-    if(ok)el("roomCodeInvite").textContent="Скопировано! 💚";
+    el("roomCodeStatus").textContent=ok?"Приглашение с кодом и ссылкой скопировано. Отправьте его партнёру 💗":"Не удалось скопировать автоматически. Скопируйте код и ссылку отдельно.";
+    if(ok)el("roomCodeInvite").textContent="Скопировано! 💗";
   }
 }
 el("roomCodeInvite").onclick=inviteToRoom;
@@ -1484,7 +1484,7 @@ function build(){view();if(blk>=8){if(blk===9)renderResults();return}list=make(b
 function draw(dir){
   var c=el("card");finArmed=false;
   if(i>=list.length){
-    var endPhrases=["Каждый разговор — ещё один шаг навстречу ❤️","Спасибо, что делитесь друг с другом. Впереди новые открытия 💌","Вы уже узнали друг о друге чуть больше. Сохраните это тепло 🌷","Не спешите — важные разговоры любят время 💚","Пусть у каждого ответа будет место быть услышанным ♡","Близость складывается из таких тихих и честных разговоров ✨","Остановитесь на мгновение и поблагодарите друг друга за откровенность 💗"];
+    var endPhrases=["Каждый разговор — ещё один шаг навстречу ❤️","Спасибо, что делитесь друг с другом. Впереди новые открытия 💌","Вы уже узнали друг о друге чуть больше. Сохраните это тепло 🌷","Не спешите — важные разговоры любят время 💗","Пусть у каждого ответа будет место быть услышанным ♡","Близость складывается из таких тихих и честных разговоров ✨","Остановитесь на мгновение и поблагодарите друг друга за откровенность 💗"];
     c.innerHTML='<div class="end"><p class="cat">Блок пройден</p><p class="q">Вы узнали друг о друге чуть больше.</p></div><p class="hint"></p>';
     c.querySelector(".hint").textContent=blk<lastBlock()?endPhrases[(blk-1)%endPhrases.length]:"Спасибо, что провели это время вместе. Пусть ваши разговоры продолжаются ❤️";
   }else if(list[i].intro){
@@ -1748,14 +1748,14 @@ pactLoad();
 el("shareNaedine").onclick=function(){
   var shareData={title:"Наедине — вопросы для двоих",text:"Попробуйте «Наедине» — вопросы, которые помогают стать ближе друг к другу ❤️",url:location.href};
   if(navigator.share){navigator.share(shareData).catch(function(){});return}
-  try{navigator.clipboard.writeText(shareData.url).then(function(){el("shareNaedine").textContent="Ссылка скопирована 💚"},function(){el("rmsg2").textContent="Не удалось скопировать ссылку. Скопируйте адрес сайта вручную."})}
+  try{navigator.clipboard.writeText(shareData.url).then(function(){el("shareNaedine").textContent="Ссылка скопирована 💗"},function(){el("rmsg2").textContent="Не удалось скопировать ссылку. Скопируйте адрес сайта вручную."})}
   catch(e){el("rmsg2").textContent="Скопируйте адрес сайта из строки браузера."}
 };
 el("copyLetters").onclick=function(){
   var one=el("letterOne").value.trim(),two=el("letterTwo").value.trim(),status=el("letterStatus");
   if(!one&&!two){status.textContent="Напишите хотя бы одно послание.";return}
   var content="Письма друг другу · Наедине\n\nПартнёр 1:\n"+(one||"—")+"\n\nПартнёр 2:\n"+(two||"—");
-  try{navigator.clipboard.writeText(content).then(function(){status.textContent="Письма скопированы. Сохраните их или отправьте друг другу 💚"},function(){status.textContent="Не удалось скопировать. Выделите текст и скопируйте вручную."})}
+  try{navigator.clipboard.writeText(content).then(function(){status.textContent="Письма скопированы. Сохраните их или отправьте друг другу 💗"},function(){status.textContent="Не удалось скопировать. Выделите текст и скопируйте вручную."})}
   catch(e){status.textContent="Не удалось скопировать. Выделите текст и скопируйте вручную."}
 };
 
@@ -1778,9 +1778,9 @@ el("suggestionForm").addEventListener("submit",function(e){
     });
   }).then(function(){
     el("suggestionMessage").value="";
-    status.textContent="Спасибо! Ваше пожелание отправлено 💚";
+    status.textContent="Спасибо! Ваше пожелание отправлено 💗";
     button.textContent="Отправлено!";
-    setTimeout(function(){button.disabled=false;button.textContent="Отправить пожелание 💚"},2500);
+    setTimeout(function(){button.disabled=false;button.textContent="Отправить пожелание 💗"},2500);
   }).catch(function(err){
     status.textContent="Не получилось отправить. Проверьте интернет и попробуйте ещё раз.";
     button.disabled=false;button.textContent="Попробовать снова";
