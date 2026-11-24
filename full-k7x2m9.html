@@ -947,6 +947,55 @@ button, button *, .btn, .btn *, [role="button"], [role="button"] *{
   text-decoration:none!important;
 }
 
+
+/* Точечная фиксация кнопки «Присоединиться» и снятие подчёркиваний со всех интерактивных блоков */
+#lobby .join-card{min-width:0!important;overflow:hidden!important}
+#lobby .join-card .join-btn{
+  flex:0 0 44px!important;
+  align-self:stretch!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  min-height:44px!important;
+  height:44px!important;
+  padding:0 6px!important;
+  margin:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  overflow:hidden!important;
+  white-space:nowrap!important;
+  font-family:"Manrope",system-ui,sans-serif!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  letter-spacing:-.25px!important;
+  line-height:1!important;
+  text-align:center!important;
+  text-decoration:none!important;
+  text-decoration-line:none!important;
+}
+#lobby .join-card .join-btn .join-btn-label{
+  display:block!important;
+  flex:0 1 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  padding:0!important;
+  margin:0!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:clip!important;
+  font-size:inherit!important;
+  line-height:1!important;
+  text-decoration:none!important;
+  text-decoration-line:none!important;
+}
+a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, .chip,.chip *, .link,.link *, .shuffle,.shuffle *{
+  text-decoration:none!important;
+  text-decoration-line:none!important;
+  -webkit-text-decoration:none!important;
+}
+
 </style>
 </head>
 <body>
