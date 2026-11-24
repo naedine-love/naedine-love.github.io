@@ -177,6 +177,7 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
 #lobby .join-card input{margin-bottom:10px;letter-spacing:.08em}
 .join-btn{min-height:50px;border-radius:15px;justify-content:center;padding:10px 14px}
 .join-btn .menu-arrow{display:none}
+.resume-local-btn{background:linear-gradient(110deg,#F2F7F1,#E7F0E9);border-color:#D9E8DC;color:#466B5C;min-height:76px}.resume-local-btn .menu-icon{font-size:1.8rem;color:#557F70}
 .local-btn{background:linear-gradient(110deg,#FFFDFC,#F8E6E9);border-color:#F0D6DC;color:var(--ink);min-height:86px}
 .local-btn .menu-label{display:flex;flex-direction:column;gap:3px}
 .local-btn .menu-label small{font-size:.76rem;font-weight:400;color:var(--muted);line-height:1.35}
@@ -326,6 +327,7 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
       <button class="btn menu-btn join-btn" id="rjoin"><span>Войти по коду</span><span class="menu-arrow">›</span></button>
     </section>
     <button class="btn menu-btn local-btn" id="plocal"><span class="menu-icon">♡</span><span class="menu-label"><b>Играть с одного телефона</b><small>Проходите игру вдвоём на одном устройстве</small></span><span class="menu-arrow">›</span></button>
+    <button class="btn menu-btn resume-local-btn" id="resumeLocal" style="display:none"><span class="menu-icon">↗</span><span class="menu-label"><b>Продолжить с того же места</b><small>Вернуться к последнему вопросу</small></span><span class="menu-arrow">›</span></button>
     <div class="prow" id="controw" style="display:none"><button class="btn menu-btn" id="pcont"><span class="menu-icon">♡</span><span>Продолжить игру в комнате</span><span class="menu-arrow">›</span></button></div>
   </div>
   <p class="count" id="rmsg2" aria-live="polite"></p>
@@ -730,7 +732,8 @@ el("pcont").onclick=async function(){
   saveName();roomMsg("Входим…");
   try{await withTimeout(authP,12000,"auth-timeout");enterRoom(sget("room"));roomMsg("")}catch(e){roomMsg(errText(e))}
 };
-el("plocal").onclick=function(){saveName();startGame("local")};
+el("plocal").onclick=function(){saveName();startGame("local",false)};
+el("resumeLocal").onclick=function(){saveName();startGame("local",true)};
 el("back").onclick=function(){showLobby()};
 el("allBlocks").onclick=function(){chips();showBlockRoom();window.scrollTo({top:0,behavior:"smooth"})};
 el("rcopycode").onclick=function(){try{navigator.clipboard.writeText(ROOM.id).then(function(){roomMsg("Код скопирован. Отправьте его партнёру.")},function(){roomMsg("Не удалось скопировать. Выделите код вручную.")})}catch(e){roomMsg("Не удалось скопировать. Выделите код вручную.")}};
@@ -740,14 +743,35 @@ function showLobby(){
   el("lobby").style.display="";el("game").style.display="none";
   el("myname").value=sget("nm1");
   el("controw").style.display=(sget("room")&&db)?"":"none";
+  el("resumeLocal").style.display=readJourneyPosition("local")?"":"none";
   el("rmsg2").textContent="";
 }
-function startGame(mode){
+function journeyPositionKey(mode){
+  return mode==="room"&&ROOM?"naedine_journey_room_"+ROOM.id:"naedine_journey_local";
+}
+function readJourneyPosition(mode){
+  try{
+    var raw=localStorage.getItem(journeyPositionKey(mode));
+    if(!raw)return null;
+    var saved=JSON.parse(raw);
+    if(!saved||!Number.isInteger(saved.block)||!Number.isInteger(saved.index)||saved.block<1||saved.block>7||saved.index<0)return null;
+    return saved;
+  }catch(e){return null}
+}
+function saveJourneyPosition(){
+  if(!MODE||blk<1||blk>7)return;
+  try{localStorage.setItem(journeyPositionKey(MODE),JSON.stringify({block:blk,index:i,updatedAt:Date.now()}))}catch(e){}
+}
+function startGame(mode,resume){
   MODE=mode;el("lobby").style.display="none";el("game").style.display="";
   el("roombar").style.display=mode==="room"?"":"none";
   if(mode==="room")el("rshow").textContent=ROOM.id;
   el("lead2").textContent=mode==="room"?"Отвечайте каждый на своём телефоне. Ответы откроются, когда вы оба завершите блок.":"Вытягивайте карточку и отвечайте оба — письменно или вслух. Потом обменяйтесь ответами.";
-  PRG={};blk=1;chips();showBlockRoom();
+  PRG={};
+  var saved=resume?readJourneyPosition(mode):null;
+  if(saved&&saved.block<=lastBlock()){
+    blk=saved.block;list=make(blk);i=Math.min(saved.index,list.length);view();draw(0);
+  }else{blk=1;chips();showBlockRoom()}
 }
 
 
@@ -789,7 +813,7 @@ function build(){view();if(blk>=8){if(blk===9)renderResults();return}list=make(b
 function draw(dir){
   var c=el("card");finArmed=false;
   if(i>=list.length){
-    var endPhrases=["Каждый разговор — ещё один шаг навстречу ❤️","Спасибо, что делитесь друг с другом. Впереди новые открытия 💌","Вы уже узнали друг о друге чуть больше. Сохраните это тепло 🌷","Не спешите — важные разговоры любят время 💚"];
+    var endPhrases=["Каждый разговор — ещё один шаг навстречу ❤️","Спасибо, что делитесь друг с другом. Впереди новые открытия 💌","Вы уже узнали друг о друге чуть больше. Сохраните это тепло 🌷","Не спешите — важные разговоры любят время 💚","Пусть у каждого ответа будет место быть услышанным ♡","Близость складывается из таких тихих и честных разговоров ✨","Остановитесь на мгновение и поблагодарите друг друга за откровенность 💗"];
     c.innerHTML='<div class="end"><p class="cat">Блок пройден</p><p class="q">Вы узнали друг о друге чуть больше.</p></div><p class="hint"></p>';
     c.querySelector(".hint").textContent=blk<lastBlock()?endPhrases[(blk-1)%endPhrases.length]:"Спасибо, что провели это время вместе. Пусть ваши разговоры продолжаются ❤️";
   }else if(list[i].intro){
@@ -810,6 +834,7 @@ function draw(dir){
   el("fill").style.width=progress+"%";
   el("count").textContent=atEnd?"Блок пройден":(onBridge?"Блок пройден":(onIntro?"Вступление":(i+1-off)+" из "+n));
   var jp=el("journeyProgress");if(jp){jp.style.display=blk>=8?"none":"";el("journeyBlock").textContent="Блок "+blk+" из "+lastBlock();el("journeyPercent").textContent=Math.round(progress)+"%";el("journeyFill").style.width=progress+"%";}
+  saveJourneyPosition();
   el("prev").disabled=i===0&&blk===1;
   el("next").textContent=atEnd?(blk<lastBlock()?(blk===7?"К договорённостям":"К следующему блоку"):"Сначала"):(onBridge?(CHANNEL_URL?"В Telegram-канал":"Сначала"):"Дальше");
   renderAns();renderFin();
@@ -959,8 +984,14 @@ function renderFin(){
   if(d.me){f.classList.add("waiting-state");
     if(d.partner&&REV[blk]){
       f.classList.add("both-done");
-      add("p","Вы прошли этот этап вместе ♥ Теперь можно спокойно открыть ответы друг друга.");
-      var b=add("button","Все ответы");b.className="btn main";b.onclick=function(){blk=9;chips();build()};
+      var allTogether=BLOCKS.length===7&&BLOCKS.every(function(n){return !!REV[n]});
+      if(allTogether){
+        add("p","Вы прошли все семь тем вместе. Спасибо, что нашли время услышать друг друга. Пусть это тепло останется с вами и за пределами «Наедине» ♡");
+        var b=add("button","Открыть вашу общую историю");b.className="btn main";b.onclick=function(){blk=9;chips();build()};
+      }else{
+        add("p","Вы прошли этот этап вместе ♥ Теперь можно спокойно открыть ответы друг друга.");
+        var b=add("button","Все ответы");b.className="btn main";b.onclick=function(){blk=9;chips();build()};
+      }
     }else if(d.partner){add("p","Партнёр закончил. Загружаем ответы…")}
     else add("p","♥ Отличная работа! Ваши ответы сохранены и скрыты. Теперь ждём партнёра — как только он завершит блок, ответы откроются здесь автоматически.");
   }else if(onLast){
