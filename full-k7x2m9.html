@@ -1146,7 +1146,18 @@ el("suggestionForm").addEventListener("submit",function(e){
 });
 authP.then(restoreTelegramAccess).catch(function(){});
 window.addEventListener("pagehide",function(){if(MODE==="room")writePresence(false)});
-showLobby();
+/* Автоматически возвращаем участника в последнюю комнату на этом устройстве. */
+authP.then(async function(){
+  var savedRoom=sget("room");
+  if(savedRoom&&db){
+    try{
+      var snap=await withTimeout(db.collection("rooms").doc(savedRoom).get(),10000,"firestore-timeout");
+      var members=snap.exists?(snap.data().members||[]):[];
+      if(snap.exists&&members.indexOf(UID)>=0){enterRoom(savedRoom);return;}
+    }catch(e){console.warn("Room auto-resume failed:",e);}
+  }
+  showLobby();
+}).catch(function(){showLobby()});
 </script>
 </body>
 </html>
