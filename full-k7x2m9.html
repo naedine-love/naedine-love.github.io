@@ -3,6 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8EEE9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Наедине">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/icon.svg">
+<link rel="apple-touch-icon" href="/icon.svg">
 <title>Наедине — вопросы для двоих</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -303,6 +310,18 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
 #letterStatus{min-height:18px;text-align:center;font-size:.77rem;color:#527D6E;margin:8px 0 0}
 
 
+/* Установка приложения */
+.install-app-btn{width:100%;margin:0 0 10px;border:1px solid #EBCAD1;background:linear-gradient(135deg,#FFF9F6,#F9E5E9);color:#A85F73;font-weight:800;box-shadow:0 4px 13px rgba(185,101,124,.08)}
+.install-hint{font-size:.72rem;color:#8A817D;text-align:center;margin:-3px 0 12px}
+#installHelp{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(25,20,25,.62)}
+#installHelp.show{display:flex}
+#installHelp .install-card{width:min(100%,390px);background:#FFFBF8;border:1px solid #F0DCD8;border-radius:24px;padding:24px 21px;box-shadow:0 20px 60px #24151B30}
+#installHelp h2{font-family:"Lora",Georgia,serif;color:#31534A;font-size:1.35rem;margin:0 0 9px}
+#installHelp p{font-size:.88rem;color:#6F7771;line-height:1.55;margin:8px 0}
+#installHelp .install-steps{background:#F9F0EC;border-radius:15px;padding:12px 14px;margin:13px 0}
+#installHelp .install-steps b{color:#A85F73}
+#installHelp .install-close{width:100%;margin-top:12px}
+
 /* На стартовом экране не показываем старую кнопку «Результаты» */
 #lobby .results-menu-btn,#lobby #openResults{display:none!important}
 </style>
@@ -347,6 +366,8 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
     <p>Будем постепенно добавлять новые тематические колоды.</p>
   </section>
   <p class="lead small privacy-note">🔒 Ваши ответы конфиденциальны. Они не публикуются и не передаются посторонним. В игре вдвоём партнёр увидит ответы только после завершения блока обоими участниками.</p>
+  <button class="btn install-app-btn" id="installApp" type="button">♡ Установить приложение</button>
+  <p class="install-hint" id="installHint">Добавьте «Наедине» на экран телефона</p>
   <button class="btn lobby-share" id="shareNaedine" type="button">♡ Поделиться «Наедине»</button>
   <footer class="lobby-footer">Играйте, делитесь, открывайте друг друга ♡</footer>
 </div>
@@ -456,6 +477,19 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
       <button class="link" id="paywallClose" type="button">Вернуться к пройденным темам</button>
     </div>
     <p class="paywall-note" id="paywallNote">Откроется наш бот: подпишитесь на канал, нажмите «Я подписался» — и мы автоматически откроем оставшиеся блоки. ❤️</p>
+  </div>
+</div>
+<div id="installHelp" role="dialog" aria-modal="true" aria-labelledby="installHelpTitle">
+  <div class="install-card">
+    <h2 id="installHelpTitle">Добавить «Наедине» на экран 💗</h2>
+    <p id="installHelpIntro">Приложение будет открываться отдельно, как обычное приложение.</p>
+    <div class="install-steps" id="installHelpSteps">
+      <p><b>1.</b> Нажмите «Поделиться» в Safari (квадрат со стрелкой вверх).</p>
+      <p><b>2.</b> Выберите «На экран Домой».</p>
+      <p><b>3.</b> Нажмите «Добавить».</p>
+    </div>
+    <p id="installHelpNote">Для установки на iPhone откройте сайт именно в Safari.</p>
+    <button class="btn main install-close" id="installHelpClose" type="button">Понятно 💗</button>
   </div>
 </div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1144,6 +1178,28 @@ el("suggestionForm").addEventListener("submit",function(e){
     button.disabled=false;button.textContent="Попробовать снова";
   });
 });
+/* PWA: установка и регистрация приложения */
+(function(){
+  var installBtn=document.getElementById("installApp"),help=document.getElementById("installHelp"),deferredPrompt=null;
+  var isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+  var standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  function closeHelp(){help.classList.remove("show")}
+  document.getElementById("installHelpClose").addEventListener("click",closeHelp);
+  help.addEventListener("click",function(e){if(e.target===help)closeHelp()});
+  if(standalone){installBtn.style.display="none";document.getElementById("installHint").style.display="none";}
+  else{
+    window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();deferredPrompt=e;});
+    installBtn.addEventListener("click",async function(){
+      if(deferredPrompt){deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;return;}
+      var intro=document.getElementById("installHelpIntro"),steps=document.getElementById("installHelpSteps"),note=document.getElementById("installHelpNote");
+      if(isIOS){intro.textContent="На iPhone добавление выполняется через меню Safari — это займёт несколько секунд.";note.textContent="Важно: откройте сайт именно в Safari. Если вы сейчас в Instagram, откройте меню браузера и выберите «Открыть в Safari».";}
+      else{intro.textContent="Откройте меню браузера и выберите «Установить приложение» или «Добавить на главный экран».";steps.innerHTML="<p><b>1.</b> Нажмите меню браузера (⋮).</p><p><b>2.</b> Выберите «Установить приложение» или «Добавить на главный экран».</p><p><b>3.</b> Подтвердите установку.</p>";note.textContent="Если такой команды нет, попробуйте открыть сайт в Chrome.";}
+      help.classList.add("show");
+    });
+    window.addEventListener("appinstalled",function(){installBtn.style.display="none";document.getElementById("installHint").style.display="none";});
+  }
+  if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("PWA worker registration failed",e);});});}
+})();
 authP.then(restoreTelegramAccess).catch(function(){});
 window.addEventListener("pagehide",function(){if(MODE==="room")writePresence(false)});
 /* Автоматически возвращаем участника в последнюю комнату на этом устройстве. */
