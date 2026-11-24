@@ -576,7 +576,8 @@ function clearR(){
 function stopListen(){unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];Object.keys(progressTimers).forEach(function(k){clearTimeout(progressTimers[k])});progressTimers={};if(presenceTimer){clearInterval(presenceTimer);presenceTimer=null}if(typingTimer){clearTimeout(typingTimer);typingTimer=null}isTyping=false}
 function writePresence(active){
   if(!db||!ROOM||!UID)return Promise.resolve();
-  return db.collection("rooms").doc(ROOM.id).collection("presence").doc(UID).set({uid:UID,active:!!active,lastSeen:Date.now(),typing:!!(active&&isTyping),typingBlock:blk,typingAt:Date.now()},{merge:true}).catch(function(e){roomMsg(errText(e))});
+  var safeBlock=Math.min(7,Math.max(1,Number(blk)||1));
+  return db.collection("rooms").doc(ROOM.id).collection("presence").doc(UID).set({uid:UID,active:!!active,lastSeen:Date.now(),typing:!!(active&&isTyping),typingBlock:safeBlock,typingAt:Date.now()},{merge:true}).catch(function(e){console.error("Firestore presence write failed:",e);roomMsg(errText(e))});
 }
 function setTyping(active){
   if(typingTimer){clearTimeout(typingTimer);typingTimer=null}
