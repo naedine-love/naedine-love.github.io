@@ -1,0 +1,40 @@
+name: Validate frontend scripts
+
+on:
+  pull_request:
+    branches: ["main"]
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check inline JavaScript
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib, re, subprocess
+          html = pathlib.Path("full-k7x2m9.html").read_text(encoding="utf-8")
+          blocks = re.findall(r'<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, flags=re.I | re.S)
+          checked = 0
+          for index, source in enumerate(blocks):
+              if not source.strip():
+                  continue
+              path = pathlib.Path(f"/tmp/naedine-inline-{index}.js")
+              path.write_text(source, encoding="utf-8")
+              subprocess.run(["node", "--check", str(path)], check=True)
+              checked += 1
+          if not checked:
+              raise SystemExit("No inline JavaScript blocks found")
+          print(f"Validated {checked} inline JavaScript block(s)")
+          PY

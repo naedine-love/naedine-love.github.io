@@ -1125,6 +1125,20 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
     <div class="block-heading"><strong>Все темы</strong><span>9 разделов · ваш общий путь</span></div>
     <div class="chips" id="chips" role="group" aria-label="Блоки"></div>
     <p class="block-room-foot">Не обязательно проходить всё сразу. Возвращайтесь к любому блоку, когда захотите ♡</p>
+    <section class="couple-tools" id="coupleTools" style="display:none">
+      <div class="couple-tools-heading"><span class="eyebrow">НЕ ТОЛЬКО ВОПРОСЫ</span><h3>Ваши маленькие традиции</h3><p>Новые поводы быть ближе — каждый день</p></div>
+      <div class="couple-tool-grid">
+        <button type="button" class="couple-tool daily-tool" id="dailyOpen"><span>☀</span><b>Вопрос дня</b><small>Один вопрос для двоих</small></button>
+        <button type="button" class="couple-tool history-tool" id="historyOpen"><span>♡</span><b>История пары</b><small>Ваши ответы и совпадения</small></button>
+        <button type="button" class="couple-tool ideas-tool" id="ideasOpen"><span>✦</span><b>Идеи для свиданий</b><small>Маленькие планы вдвоём</small></button>
+        <button type="button" class="couple-tool letters-tool" id="lettersOpen"><span>✉</span><b>Тайные послания</b><small>Письма к особому дню</small></button>
+        <button type="button" class="couple-tool notices-tool" id="notificationsOpen"><span>♧</span><b>Уведомления <i id="notificationBadge" hidden>0</i></b><small>Что нового у вас двоих</small></button>
+      </div>
+      <section class="couple-panel" id="couplePanel" hidden>
+        <div class="couple-panel-head"><h3 id="couplePanelTitle">Ваше пространство</h3><button type="button" id="couplePanelClose" aria-label="Закрыть">×</button></div>
+        <div id="couplePanelContent"></div>
+      </section>
+    </section>
   </section>
   <div id="questionStage" style="display:none">
   <div class="stage-tools"><button class="link" id="allBlocks">← Все блоки</button><span id="stageName"></span></div>
@@ -1245,11 +1259,29 @@ var BLOCKS=[1,2], CHANNEL_URL="https://t.me/zhenazekaa";
 var ACCESS_API_URL="https://naedine-telegram-access.onrender.com";
 var pendingProtectedBlock=3;
 var TITLES={1:"1. Узнаём друг друга ближе",2:"2. Вкусы и любимое",3:"3. Быт и совместная жизнь",4:"4. Развлечения и путешествия",5:"5. Решаем",6:"6. Близость",7:"7. Интим (18+)",8:"8. Наши договорённости",9:"9. Все ответы"};
+var DAILY_QUESTIONS=[
+"Какой момент за последнее время заставил тебя почувствовать, что мы — настоящая команда?","Что маленькое я могу сделать сегодня, чтобы ты почувствовал(а) мою заботу?","Какое наше воспоминание ты хотел(а) бы сохранить в отдельной коробочке времени?","В чём мы стали лучше понимать друг друга за последний год?","Какой совместный ритуал ты хотел(а) бы завести?","Когда рядом со мной тебе особенно спокойно?","Какое новое место ты мечтаешь однажды увидеть вместе?","За что ты сегодня мог(ла) бы сказать мне спасибо?","Что из простых вещей делает наши обычные дни особенными?","Какой вечер вдвоём ты назвал(а) бы идеальным прямо сейчас?","Что ты давно хотел(а) мне рассказать, но всё не находил(а) момента?","Как я могу лучше поддерживать тебя в непростые дни?","Какую нашу смешную историю стоит чаще вспоминать?","Чему ты хотел(а) бы научиться вместе со мной?","Какой комплимент от меня тебе особенно приятно слышать?","Что в наших отношениях хочется беречь особенно внимательно?","Какое приключение нам стоит устроить в ближайший месяц?","В какой момент ты понял(а), что можешь мне доверять?","Что нового ты заметил(а) во мне в последнее время?","Как выглядит наше счастливое обычное воскресенье?","Что помогает нам мириться и снова становиться ближе?","Какую мечту одного из нас мы могли бы поддержать уже сейчас?","Какая песня могла бы стать саундтреком нашей истории сегодня?","Что тебе хочется попробовать впервые именно вместе со мной?","Какая моя черта помогает тебе чувствовать себя любимым(ой)?","Что мы можем сделать на этой неделе только ради радости?","Какой небольшой совместный план будет ждать нас с нетерпением?","Что ты хочешь, чтобы мы никогда не переставали делать друг для друга?"
+];
+var DATE_IDEAS=[
+{id:"phone-free-evening",title:"Вечер без телефонов",desc:"Уберите телефоны подальше и посвятите вечер только друг другу"},
+{id:"cook-together",title:"Приготовить новое блюдо",desc:"Выберите рецепт, распределите роли и устройте домашний ресторан"},
+{id:"sunset-walk",title:"Прогулка на закате",desc:"Найдите красивый маршрут и поговорите без спешки"},
+{id:"dream-trip",title:"Спланировать путешествие мечты",desc:"Выберите страну, составьте маршрут и придумайте первое приключение"},
+{id:"first-date-replay",title:"Повторить первое свидание",desc:"Вернитесь в место вашей первой встречи или воссоздайте атмосферу"},
+{id:"home-spa",title:"Домашний спа-вечер",desc:"Свечи, музыка, маски и забота друг о друге"},
+{id:"board-game-night",title:"Вечер настольных игр",desc:"Выберите игру, приготовьте вкусности и устройте маленький турнир"},
+{id:"new-hobby",title:"Попробовать новое хобби",desc:"Выберите занятие, которое интересно вам обоим, и попробуйте вместе"},
+{id:"memory-album",title:"Альбом общих воспоминаний",desc:"Соберите фотографии и подпишите любимые моменты вашей истории"},
+{id:"breakfast-in-bed",title:"Завтрак друг для друга",desc:"По очереди приготовьте красивый завтрак и устройте медленное утро"},
+{id:"kindness-day",title:"День маленьких сюрпризов",desc:"В течение дня оставляйте друг другу приятные записки и знаки внимания"},
+{id:"future-letter",title:"Письмо в будущее",desc:"Напишите, о чём мечтаете как пара, и договоритесь перечитать через год"}
+];
 var B=[null,["Что в моём характере тебя удивило, когда мы только познакомились?","Какую мою маленькую привычку ты находишь милой?","Что помогает мне восстановиться после тяжёлого дня?","Что мне нужно, когда я расстроен(а)? Как ты это понимаешь?","В какие моменты я больше всего становлюсь самим(ой) собой?","Что меня тревожит, но я редко об этом говорю?","Какой страх я ношу в себе с детства?","Что в наших отношениях для меня самое ценное?","Какое наше воспоминание я вспоминаю чаще всего?","Какая мелочь делает мой день лучше?","Какой наш маленький ритуал (сообщение, звонок, привычка) для меня самый важный?","Каким ты запомнил(а) наш первый разговор? Что тебя тогда зацепило?","Какой момент из моего детства сильнее всего меня сформировал?","Что ты хотел(а) бы, чтобы я лучше понимал(а) в тебе?","Что нового ты узнал(а) обо мне за время наших отношений, чего не ожидал(а)?"],["Какое блюдо я могу есть каждую неделю, и оно мне не надоест?","Какой фильм или сериал я пересматривал(а) чаще всего?","Какая песня сразу поднимает мне настроение?","Что я закажу в любимом кафе, если можно выбрать всё что угодно?","Что из того, что я люблю, тебе до сих пор непонятно? Спроси меня об этом.","Какой подарок обрадовал бы меня больше всего? А какой обрадовал бы тебя? Сравним.","Куда я бы поехал(а) в идеальный отпуск? А ты? Куда поедем вместе?","Какую мою странную привычку ты замечаешь, но ни разу не обсуждал(а)?","Что из моего детства ты хотел(а) бы увидеть своими глазами: фото, любимое место, игрушку?","Каким должен быть наш идеальный выходной? Где мы совпали, а где нет?","Что бы тебе хотелось приготовить или попробовать вместе со мной в первый раз?","Расскажи то, что я о тебе точно не знаю, но, по-твоему, должен(на) узнать.","Какое занятие нам стоит попробовать вместе, но мы всё откладывали?","Какое моё качество ты полюбил(а) не сразу, а со временем?","Назовите друг про друга любимый цвет, еду и фильм, а потом сверьтесь. Кто был точнее?"]];
 var INTRO="Этот блок для взрослых пар. Отвечайте честно и без осуждения.", BRIDGE="Вы уже узнали друг друга лучше. Дальше пойдёт самое интересное: быт, мечты, близость и то, что вы хотите изменить вместе.";
 var FB_CFG={apiKey:"AIzaSyCnLhxurSJ8s28GWYcjSjNe_pkgkiwTBrw",authDomain:"koloda-app.firebaseapp.com",projectId:"koloda-app",storageBucket:"koloda-app.firebasestorage.app",messagingSenderId:"886064865472",appId:"1:886064865472:web:b1f53db07c5e22ad744d25"};
 var blk=1, list=[], i=0, MODE=null, MEM={}, hideP={1:false,2:false};
 var db=null, UID=null, ROOM=null, DN={}, REV={}, FETCH={}, PRG={}, PRES={}, unsubs=[], finArmed=false, progressTimers={}, presenceTimer=null, typingTimer=null, isTyping=false;
+var COUPLE_STATE=null, coupleSyncTimer=null, couplePanelOpen="", coupleSyncBusy=false, coupleSyncAgain=false;
 var el=function(id){return document.getElementById(id)};
 function storageKey(k){k=String(k);return k.charAt(0)==="R"&&ROOM&&ROOM.id?"kp_R_"+encodeURIComponent(ROOM.id)+"_"+k.slice(1):"kp_"+k}
 function sget(k){var key=storageKey(k);try{var v=localStorage.getItem(key);if(v!==null)return v}catch(e){}return MEM[key]||""}
@@ -1293,6 +1325,7 @@ function applyTelegramAccess(data){
   FULL=true;BLOCKS=[1,2,3,4,5,6,7];
   try{localStorage.setItem("kp_full_access","1")}catch(e){}
   updateOverview();chips();
+  if(ROOM&&MODE==="room")syncCoupleData(false);
 }
 function deviceAccessKey(){
   try{
@@ -1399,7 +1432,7 @@ function migrateLegacyRoomData(roomCode){
     }
   });
 }
-function stopListen(){unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];Object.keys(progressTimers).forEach(function(k){clearTimeout(progressTimers[k])});progressTimers={};if(presenceTimer){clearInterval(presenceTimer);presenceTimer=null}if(typingTimer){clearTimeout(typingTimer);typingTimer=null}isTyping=false}
+function stopListen(){unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];Object.keys(progressTimers).forEach(function(k){clearTimeout(progressTimers[k])});progressTimers={};if(presenceTimer){clearInterval(presenceTimer);presenceTimer=null}if(typingTimer){clearTimeout(typingTimer);typingTimer=null}isTyping=false;stopCoupleSync()}
 function writePresence(active){
   if(!db||!ROOM||!UID)return Promise.resolve();
   var safeBlock=Math.min(7,Math.max(1,Number(blk)||1));
@@ -1555,7 +1588,8 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!el("roomCo
 function enterRoom(code){
   var previousRoom=sget("room");
   if(previousRoom)migrateLegacyRoomData(previousRoom);
-  ROOM={id:code,members:[]};DN={};REV={};FETCH={};sset("room",code);listenRoom();startGame("room",true);
+  if(ROOM&&ROOM.id!==code)writePresence(false);
+  ROOM={id:code,members:[]};DN={};REV={};FETCH={};sset("room",code);listenRoom();startGame("room",true);startCoupleSync();
   /* После соединения участников сервер повторно проверяет доступ пары. */
   authP.then(restoreTelegramAccess).catch(function(){});
 }
@@ -1600,6 +1634,8 @@ el("rcopycode").onclick=function(){try{navigator.clipboard.writeText(ROOM.id).th
 
 /* ---------- лобби и вход в игру ---------- */
 function showLobby(){
+  if(ROOM&&MODE==="room")writePresence(false);
+  stopListen();
   el("lobby").style.display="";el("game").style.display="none";
   el("myname").value=sget("nm1");
   el("controw").style.display=(sget("room")&&db)?"":"none";
@@ -1653,7 +1689,7 @@ function make(n){
 function qcount(){return list.filter(function(d){return !d.bridge&&!d.intro}).length}
 function showBlockRoom(){
   el("liveTally").style.display="none";
-  chips();
+  chips();renderCoupleFeatures();
   el("blockRoom").style.display="";
   el("questionStage").style.display="none";
   el("pact").style.display="none";el("res").style.display="none";
@@ -1896,6 +1932,236 @@ function renderFin(){
   }
 }
 
+
+/* ---------- дополнительные возможности пары ---------- */
+function coupleEscape(value){
+  return String(value==null?"":value).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]});
+}
+function coupleDateKey(){return new Date().toISOString().slice(0,10)}
+function dailyQuestionFor(date){
+  var day=Math.floor(Date.parse(String(date)+"T00:00:00Z")/86400000);
+  var index=((day%DAILY_QUESTIONS.length)+DAILY_QUESTIONS.length)%DAILY_QUESTIONS.length;
+  return {id:"q"+index,text:DAILY_QUESTIONS[index]};
+}
+function coupleFormatDate(ms){
+  if(!ms)return "Дата пока не указана";
+  try{return new Date(ms).toLocaleDateString("ru-RU",{day:"numeric",month:"long",year:"numeric"})}catch(e){return ""}
+}
+function coupleFormatDateTime(ms){
+  if(!ms)return "";
+  try{return new Date(ms).toLocaleString("ru-RU",{day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"})}catch(e){return ""}
+}
+function coupleApi(path,payload){
+  return authP.then(function(){
+    if(!firebase||!firebase.auth().currentUser)throw new Error("auth_required");
+    return firebase.auth().currentUser.getIdToken(true);
+  }).then(function(token){
+    return fetch(ACCESS_API_URL+path,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify(payload||{})});
+  }).then(function(response){return response.json().then(function(data){
+    if(!response.ok){var error=new Error(data.message||data.code||"couple_api_failed");error.code=data.code||"couple_api_failed";throw error}
+    return data;
+  })});
+}
+function startCoupleSync(){
+  if(coupleSyncTimer){clearInterval(coupleSyncTimer);coupleSyncTimer=null}
+  COUPLE_STATE=null;couplePanelOpen="";renderCoupleFeatures();
+  syncCoupleData(false);
+  coupleSyncTimer=setInterval(function(){syncCoupleData(true)},45000);
+}
+function syncCoupleData(announce){
+  if(!ROOM||MODE!=="room")return Promise.resolve(null);
+  if(coupleSyncBusy){coupleSyncAgain=true;return Promise.resolve(COUPLE_STATE)}
+  coupleSyncBusy=true;
+  var roomCode=ROOM.id;
+  return coupleApi("/api/couple/sync",{roomCode:roomCode,date:coupleDateKey(),name:nmv(1)}).then(function(data){
+    if(!ROOM||ROOM.id!==roomCode)return null;
+    COUPLE_STATE=data;
+    notifyNewCoupleActivities(data.notifications||[]);
+    renderCoupleFeatures();
+    return data;
+  }).catch(function(error){
+    if(announce)roomMsg("Дополнительные функции пока не загрузились. "+(error.message||"Попробуйте ещё раз."));
+    return null;
+  }).finally(function(){
+    coupleSyncBusy=false;
+    if(coupleSyncAgain){coupleSyncAgain=false;syncCoupleData(false)}
+  });
+}
+function stopCoupleSync(){
+  if(coupleSyncTimer){clearInterval(coupleSyncTimer);coupleSyncTimer=null}
+  coupleSyncAgain=false;coupleSyncBusy=false;COUPLE_STATE=null;couplePanelOpen="";
+}
+function renderCoupleFeatures(){
+  var tools=el("coupleTools"),panel=el("couplePanel");
+  if(!tools)return;
+  var active=MODE==="room"&&!!ROOM;
+  tools.style.display=active?"":"none";
+  if(!active){if(panel)panel.hidden=true;return}
+  var unread=(COUPLE_STATE&&COUPLE_STATE.notifications||[]).filter(function(n){return !n.read}).length;
+  var badge=el("notificationBadge");badge.textContent=unread>9?"9+":String(unread);badge.hidden=!unread;
+  if(couplePanelOpen)renderCouplePanel();
+}
+function openCouplePanel(kind){
+  if(MODE!=="room"||!ROOM)return;
+  couplePanelOpen=kind;el("couplePanel").hidden=false;
+  el("couplePanelTitle").textContent=({daily:"Вопрос дня",history:"История вашей пары",ideas:"Идеи для свиданий",letters:"Тайные послания",notifications:"Уведомления"}[kind]||"Ваше пространство");
+  el("couplePanelContent").innerHTML='<p class="couple-loading">Загружаем ваше пространство…</p>';
+  if(COUPLE_STATE)renderCouplePanel();else syncCoupleData(false);
+  el("couplePanel").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function closeCouplePanel(){couplePanelOpen="";el("couplePanel").hidden=true}
+function renderCouplePanel(){
+  if(!couplePanelOpen||!COUPLE_STATE)return;
+  var html="";
+  if(couplePanelOpen==="daily")html=renderDailyPanel();
+  if(couplePanelOpen==="history")html=renderHistoryPanel();
+  if(couplePanelOpen==="ideas")html=renderIdeasPanel();
+  if(couplePanelOpen==="letters")html=renderLettersPanel();
+  if(couplePanelOpen==="notifications")html=renderNotificationsPanel();
+  el("couplePanelContent").innerHTML=html;
+}
+function renderDailyPanel(){
+  var state=COUPLE_STATE,daily=state.daily||{},question=dailyQuestionFor(state.date),mine=daily.mine&&daily.mine.answer||"";
+  var partnerText=daily.bothAnswered?'<div class="daily-reveal"><b>Ответ партнёра</b><p>'+coupleEscape(daily.partnerAnswer)+'</p></div>':
+    (daily.partnerAnswered?'<p class="couple-wait">♡ Партнёр уже ответил. Его ответ откроется, когда вы тоже поделитесь своим.</p>':'<p class="couple-wait">Ответ партнёра пока скрыт. Вы увидите его, когда ответите оба.</p>');
+  return '<div class="daily-question-card"><span class="eyebrow">ВОПРОС НА '+coupleEscape(coupleFormatDate(Date.parse(state.date+"T00:00:00Z")))+'</span><p>'+coupleEscape(question.text)+'</p></div>'+
+    '<form id="dailyAnswerForm" class="couple-form"><label for="dailyAnswer">Ваш ответ</label><textarea id="dailyAnswer" maxlength="2000" rows="4" required placeholder="Напишите то, чем хочется поделиться…">'+coupleEscape(mine)+'</textarea><button class="btn main" type="submit">Сохранить ответ ♡</button><p class="couple-status" id="coupleActionStatus"></p></form>'+partnerText;
+}
+function similaritySummary(){
+  var state=COUPLE_STATE,exact=0,shared=[];
+  var stop=new Set(["когда","чтобы","потому","очень","просто","только","этого","этой","этот","мне","меня","тебя","твой","твоя","твое","тоже","если","есть","быть","будет","было","были","можно","нужно","хочу","хотим","наш","наша","наше","наши","вместе","который","которая","которые","которое","когда","после","перед","через","про","для","или","это","как","что","так","все","всё","они","она","него","него","него","него","себя","свой","своя","свои","при","над","под","без","между","много","больше","меньше","каждый","каждая","каждое","каждые"]);
+  (state.history||[]).forEach(function(item){
+    var mine=item.answers&&item.answers[state.uid]||{},partner=item.answers&&item.answers[state.partnerUid]||{},qs=B[item.block]||[];
+    qs.forEach(function(q,id){
+      var a=String(mine[id]||"").trim(),b=String(partner[id]||"").trim();if(!a||!b)return;
+      var na=a.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
+      var nb=b.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu," ").replace(/\s+/g," ").trim();
+      if(na.length>5&&na===nb){exact++;shared.push({block:item.block,q:q,kind:"Одинаковый ответ"});return}
+      var wa=new Set(na.split(" ").filter(function(w){return w.length>=5&&!stop.has(w)}));
+      var common=nb.split(" ").filter(function(w){return wa.has(w)});
+      common=Array.from(new Set(common));
+      if(common.length>=2)shared.push({block:item.block,q:q,kind:"Общие слова: "+common.slice(0,4).join(", ")});
+    });
+  });
+  return {exact:exact,shared:shared};
+}
+function renderHistoryPanel(){
+  var state=COUPLE_STATE,history=state.history||[],names=state.profiles||{},mineName=names[state.uid]||"Вы",partnerName=names[state.partnerUid]||"Партнёр";
+  var html='<div class="couple-profile-line"><b>'+coupleEscape(mineName)+' & '+coupleEscape(partnerName)+'</b><span>Вместе в «Наедине» с '+coupleEscape(coupleFormatDate(state.roomCreatedAt))+'</span></div>';
+  if(!state.partnerUid)return html+'<p class="couple-empty">История станет общей, когда в комнату присоединится вторая половинка.</p>';
+  if(!history.length)return html+'<p class="couple-empty">Пока нет завершённых вместе тем. Когда вы оба закончите первый блок, здесь появятся ваши ответы и совпадения ♡</p>';
+  var match=similaritySummary();
+  html+='<div class="history-summary"><b>'+history.length+' '+(history.length===1?"общая тема":"общих тем")+'</b><span>'+match.exact+' точных совпадений в ответах</span></div>';
+  if(match.shared.length)html+='<div class="similarity-card"><b>Что у вас перекликается</b>'+match.shared.slice(0,5).map(function(x){return '<p><small>'+coupleEscape(TITLES[x.block])+'</small>'+coupleEscape(x.kind)+' · '+coupleEscape(x.q)+'</p>'}).join("")+'</div>';
+  history.slice().reverse().forEach(function(item){
+    var mine=item.answers&&item.answers[state.uid]||{},partner=item.answers&&item.answers[state.partnerUid]||{},qs=B[item.block]||[];
+    html+='<details class="history-topic"><summary>'+coupleEscape(TITLES[item.block]||("Тема "+item.block))+'<small>'+coupleEscape(coupleFormatDate(item.completedAt))+'</small></summary>';
+    qs.forEach(function(q,id){
+      var a=mine[id]||"",b=partner[id]||"";if(!a&&!b)return;
+      html+='<article class="history-answer"><b>'+coupleEscape(q)+'</b>'+(a?'<p><small>'+coupleEscape(mineName)+'</small>'+coupleEscape(a)+'</p>':'')+(b?'<p><small>'+coupleEscape(partnerName)+'</small>'+coupleEscape(b)+'</p>':'')+'</article>';
+    });
+    html+='</details>';
+  });
+  return html;
+}
+function renderIdeasPanel(){
+  var state=COUPLE_STATE,progress=state.ideas||[];
+  return '<p class="couple-panel-lead">Отмечайте идеи, которые уже осуществили. Когда галочки поставите оба, идея станет вашим общим воспоминанием.</p><div class="date-idea-list">'+DATE_IDEAS.map(function(idea){
+    var item=progress.find(function(x){return x.id===idea.id})||{doneBy:[]},mine=item.doneBy.includes(state.uid),partner=state.partnerUid&&item.doneBy.includes(state.partnerUid),done=mine&&partner;
+    return '<article class="date-idea'+(done?' completed':'')+'"><div><b>'+coupleEscape(idea.title)+'</b><p>'+coupleEscape(idea.desc)+'</p><small>'+(done?'Сделали вместе ♡':(mine?'Вы отметили · ':'' )+(partner?'Партнёр отметил':'Пока не отмечено'))+'</small></div><button type="button" data-idea-toggle="'+idea.id+'" class="idea-toggle'+(mine?' selected':'')+'">'+(mine?'Отменить':'Мы сделали')+'</button></article>';
+  }).join("")+'</div><p class="couple-status" id="coupleActionStatus"></p>';
+}
+function defaultLetterDateTime(){
+  var date=new Date(Date.now()+24*60*60*1000);date.setSeconds(0,0);
+  return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+}
+function renderLettersPanel(){
+  var letters=COUPLE_STATE.letters||[];
+  var list=letters.length?letters.map(function(letter){
+    var sent=letter.fromUid===COUPLE_STATE.uid;
+    return '<article class="secret-letter"><div><b>'+(sent?'Ваше послание':'Послание от '+coupleEscape(letter.senderName||'партнёра'))+'</b><small>'+(letter.locked?'Откроется '+coupleEscape(coupleFormatDateTime(letter.openAt)):('Создано '+coupleEscape(coupleFormatDateTime(letter.createdAt))))+'</small></div><p>'+(letter.locked?'♡ Это письмо пока запечатано. Загляните сюда в назначенный день.':coupleEscape(letter.body))+'</p></article>';
+  }).join(""):'<p class="couple-empty">Здесь будут письма, которые вы отправите друг другу в будущее.</p>';
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Сначала пригласите вторую половинку в комнату, а потом сможете отправлять тайные послания.</p>';
+  return '<p class="couple-panel-lead">Напишите что-то тёплое и выберите момент, когда партнёр сможет это прочитать.</p><form id="secretLetterForm" class="couple-form"><label for="secretLetterBody">Текст послания</label><textarea id="secretLetterBody" maxlength="3000" rows="4" required placeholder="Оставьте несколько важных слов…"></textarea><label for="secretLetterDate">Когда открыть</label><input id="secretLetterDate" type="datetime-local" min="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" value="'+defaultLetterDateTime()+'" required><button class="btn main" type="submit">Запечатать послание 💌</button><p class="couple-status" id="coupleActionStatus"></p></form><h4 class="couple-subheading">Ваши письма</h4>'+list;
+}
+function renderNotificationsPanel(){
+  var notifications=COUPLE_STATE.notifications||[],unread=notifications.filter(function(n){return !n.read}).length;
+  var permission=!("Notification" in window)?"не поддерживаются":Notification.permission==="granted"?"включены":Notification.permission==="denied"?"запрещены в браузере":"не включены";
+  var list=notifications.length?notifications.map(function(n){
+    return '<article class="couple-notification'+(n.read?' read':'')+'"><div><b>'+coupleEscape(n.title)+'</b><small>'+coupleEscape(coupleFormatDateTime(n.createdAt))+'</small></div>'+(n.read?'':'<button type="button" data-notification-read="'+coupleEscape(n.id)+'">Прочитано</button>')+'</article>';
+  }).join(""):'<p class="couple-empty">Пока нет новых событий. Когда партнёр ответит на вопрос дня или отметит идею, вы увидите это здесь.</p>';
+  return '<div class="notification-permission"><span>Уведомления браузера: '+coupleEscape(permission)+'</span><button type="button" id="enableCoupleNotifications">Включить</button></div><p class="couple-panel-lead">Непрочитанных событий: '+unread+'. Уведомления браузера показываются, пока приложение открыто.</p>'+list;
+}
+function notifyNewCoupleActivities(notifications){
+  if(!ROOM||!("Notification" in window)||Notification.permission!=="granted")return;
+  var key="kp_couple_seen_"+ROOM.id,seen=[];
+  try{seen=JSON.parse(localStorage.getItem(key)||"[]");if(!Array.isArray(seen))seen=[]}catch(e){}
+  var fresh=(notifications||[]).filter(function(n){return !n.read&&seen.indexOf(n.id)<0}).slice(0,3);
+  fresh.forEach(function(n){
+    try{new Notification("Наедине",{body:n.title,icon:"/icon.svg"})}catch(e){}
+    seen.push(n.id);
+  });
+  if(fresh.length)try{localStorage.setItem(key,JSON.stringify(seen.slice(-100)))}catch(e){}
+}
+async function enableCoupleNotifications(){
+  if(!("Notification" in window)){roomMsg("Этот браузер не поддерживает уведомления.");return}
+  try{
+    var permission=await Notification.requestPermission();
+    if(permission==="granted"){roomMsg("Уведомления включены на этом устройстве. Они будут приходить, пока приложение открыто.");syncCoupleData(false)}
+    else roomMsg("Разрешите уведомления для сайта в настройках браузера.");
+  }catch(e){roomMsg("Не удалось включить уведомления в этом браузере.")}
+}
+async function toggleDateIdea(ideaId,button){
+  button.disabled=true;
+  try{await coupleApi("/api/couple/idea/toggle",{roomCode:ROOM.id,ideaId:ideaId});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось обновить идею")}
+  finally{button.disabled=false}
+}
+async function saveDailyAnswer(form){
+  var answer=el("dailyAnswer").value.trim(),question=dailyQuestionFor(COUPLE_STATE.date);
+  var button=form.querySelector('button[type="submit"]'),status=el("coupleActionStatus");
+  if(!answer){status.textContent="Напишите хотя бы пару слов.";return}
+  button.disabled=true;button.textContent="Сохраняем…";
+  try{
+    await coupleApi("/api/couple/daily",{roomCode:ROOM.id,date:COUPLE_STATE.date,questionId:question.id,answer:answer});
+    await syncCoupleData(false);roomMsg("Ваш ответ на вопрос дня сохранён ♡");
+  }catch(e){status.textContent=e.message||"Не удалось сохранить ответ."}
+  finally{button.disabled=false;button.textContent="Сохранить ответ ♡"}
+}
+async function sendSecretLetter(form){
+  var body=el("secretLetterBody").value.trim(),openAt=Date.parse(el("secretLetterDate").value),status=el("coupleActionStatus"),button=form.querySelector('button[type="submit"]');
+  if(!body||!Number.isFinite(openAt)||openAt<Date.now()){status.textContent="Проверьте текст и дату открытия.";return}
+  button.disabled=true;button.textContent="Запечатываем…";
+  try{
+    await coupleApi("/api/couple/letter/send",{roomCode:ROOM.id,body:body,openAt:openAt});
+    await syncCoupleData(false);roomMsg("Послание запечатано. Оно откроется в выбранный день 💌");
+  }catch(e){status.textContent=e.message||"Не удалось отправить послание."}
+  finally{button.disabled=false;button.textContent="Запечатать послание 💌"}
+}
+async function markCoupleNotificationRead(id,button){
+  button.disabled=true;
+  try{await coupleApi("/api/couple/notifications/read",{roomCode:ROOM.id,activityId:id});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось обновить уведомление")}
+  finally{button.disabled=false}
+}
+el("dailyOpen").onclick=function(){openCouplePanel("daily")};
+el("historyOpen").onclick=function(){openCouplePanel("history")};
+el("ideasOpen").onclick=function(){openCouplePanel("ideas")};
+el("lettersOpen").onclick=function(){openCouplePanel("letters")};
+el("notificationsOpen").onclick=function(){openCouplePanel("notifications")};
+el("couplePanelClose").onclick=closeCouplePanel;
+el("couplePanelContent").addEventListener("submit",function(e){
+  if(e.target.id==="dailyAnswerForm"){e.preventDefault();saveDailyAnswer(e.target)}
+  if(e.target.id==="secretLetterForm"){e.preventDefault();sendSecretLetter(e.target)}
+});
+el("couplePanelContent").addEventListener("click",function(e){
+  var idea=e.target.closest?e.target.closest("[data-idea-toggle]"):null;
+  if(idea){toggleDateIdea(idea.getAttribute("data-idea-toggle"),idea);return}
+  var read=e.target.closest?e.target.closest("[data-notification-read]"):null;
+  if(read){markCoupleNotificationRead(read.getAttribute("data-notification-read"),read);return}
+  if(e.target&&e.target.id==="enableCoupleNotifications")enableCoupleNotifications();
+});
+
 /* ---------- результаты ---------- */
 function collect(){
   var out=[];
@@ -2082,4 +2348,71 @@ authP.then(async function(){
 #roomCodeModal .modal-actions #roomCodeCopy{order:-1!important;width:100%!important;min-height:50px!important;margin:0!important}
 #roomCodeModal .modal-actions #roomCodeInvite{order:0!important;width:100%!important}
 #roomCodeModal .modal-actions #roomCodeClose{order:1!important;width:100%!important}
+
+/* Пространство пары: ежедневный вопрос, история, планы и письма */
+.couple-tools{margin:22px 0 8px;padding:18px;border:1px solid #EAD7DD;border-radius:24px;background:linear-gradient(145deg,#FFFBFA 0%,#F8EDF1 100%);box-shadow:0 8px 24px rgba(126,83,102,.07)}
+.couple-tools-heading{margin:0 0 14px}
+.couple-tools-heading h3{margin:3px 0 4px;font-family:"Lora",Georgia,serif;font-size:1.25rem;color:#624858}
+.couple-tools-heading p{margin:0;color:#897984;font-size:.82rem}
+.couple-tool-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.couple-tool{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:112px;padding:13px;border:1px solid #E9D5DE;border-radius:18px;background:#FFFCFB;color:#654B5A;text-align:left;box-shadow:0 4px 12px rgba(112,78,94,.06);cursor:pointer}
+.couple-tool>span{font-size:1.25rem;color:#B87991}
+.couple-tool b{font-size:.88rem;line-height:1.25}
+.couple-tool small{font-size:.7rem;line-height:1.35;color:#8D7D86}
+.couple-tool:active{transform:translateY(1px)}
+#notificationBadge{position:absolute;top:8px;right:9px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#C66E86;color:white;font-size:.66rem;font-style:normal}
+#notificationBadge[hidden],.couple-panel[hidden]{display:none!important}
+.couple-panel{margin-top:14px;padding:16px 13px;border:1px solid #E7D3DB;border-radius:19px;background:#FFFEFD;scroll-margin-top:14px}
+.couple-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.couple-panel-head h3{margin:0;font-family:"Lora",Georgia,serif;font-size:1.16rem;color:#624858}
+.couple-panel-head button{width:34px;height:34px;border:0;border-radius:50%;background:#F5E8ED;color:#76576A;font-size:1.35rem}
+.couple-loading,.couple-empty,.couple-wait{padding:13px;border-radius:13px;background:#FBF3F5;color:#806C77;font-size:.85rem;line-height:1.5}
+.daily-question-card{padding:16px;border:1px solid #EBD5DE;border-radius:17px;background:linear-gradient(135deg,#FFF9F8,#F7EAF0)}
+.daily-question-card p{margin:8px 0 0;font-family:"Lora",Georgia,serif;font-size:1.13rem;line-height:1.45;color:#624858}
+.couple-form{display:grid;gap:9px;margin:14px 0}
+.couple-form label{font-size:.82rem;font-weight:800;color:#735A68}
+.couple-form textarea,.couple-form input{width:100%;padding:12px;border:1px solid #E5D1D9;border-radius:13px;background:#FFFCFB;color:#3F5149;font:inherit;font-size:.9rem}
+.couple-form .btn{width:100%;min-height:46px;border-radius:14px}
+.couple-status{min-height:18px;margin:0;color:#8A7580;font-size:.76rem}
+.daily-reveal{margin-top:12px;padding:14px;border-radius:15px;background:#EEF5F0;border:1px solid #D5E5D9}
+.daily-reveal b{color:#456A58;font-size:.84rem}
+.daily-reveal p{margin:7px 0 0;color:#385449;white-space:pre-wrap;font-size:.9rem}
+.couple-profile-line{display:grid;gap:3px;padding:12px;border-radius:14px;background:#F8EFF2;color:#654B5A}
+.couple-profile-line span,.history-topic summary small{font-size:.72rem;color:#8B7782}
+.history-summary{display:flex;justify-content:space-between;gap:8px;align-items:center;margin:12px 0;padding:12px;border-radius:13px;background:#F2F6F1;color:#4C6A59;font-size:.8rem}
+.similarity-card{margin:12px 0;padding:13px;border:1px solid #EAD6DE;border-radius:15px;background:#FFFAFB}
+.similarity-card>b{display:block;margin-bottom:7px;color:#805B6D}
+.similarity-card p{margin:8px 0;padding-top:8px;border-top:1px solid #F0E3E8;font-size:.83rem;color:#66535D}
+.similarity-card small{display:block;color:#9B8791;font-size:.68rem}
+.history-topic{margin:10px 0;border:1px solid #E9D9DF;border-radius:14px;overflow:hidden}
+.history-topic summary{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px;background:#FBF4F6;color:#654B5A;font-weight:800;font-size:.84rem;cursor:pointer}
+.history-topic summary small{font-weight:500;text-align:right}
+.history-answer{padding:11px 12px;border-top:1px solid #F1E5E9}
+.history-answer>b{display:block;font-size:.84rem;color:#654B5A}
+.history-answer p{margin:9px 0 0;padding:9px;border-radius:11px;background:#FAF6F4;white-space:pre-wrap;font-size:.82rem;color:#45584F}
+.history-answer p small{display:block;margin-bottom:3px;color:#A16E83;font-weight:800}
+.couple-panel-lead{margin:0 0 12px;color:#806D77;font-size:.82rem;line-height:1.5}
+.date-idea-list{display:grid;gap:9px}
+.date-idea{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;border:1px solid #EADDE1;border-radius:15px;background:#FFFCFB}
+.date-idea.completed{background:#F0F6F1;border-color:#D8E6DA}
+.date-idea>div{min-width:0}
+.date-idea b{font-size:.85rem;color:#654B5A}
+.date-idea p{margin:4px 0;color:#81737B;font-size:.74rem;line-height:1.4}
+.date-idea small{font-size:.68rem;color:#8D7D86}
+.idea-toggle{flex:none;max-width:104px;padding:9px 10px;border:1px solid #E3CAD5;border-radius:12px;background:#F8EDF1;color:#79576A;font-size:.7rem;font-weight:800}
+.idea-toggle.selected{background:#EAF3EC;border-color:#D0E1D4;color:#4F735A}
+.idea-toggle:disabled{opacity:.6}
+.couple-subheading{margin:18px 0 8px;color:#715766;font-size:.9rem}
+.secret-letter{margin:9px 0;padding:13px;border:1px solid #EAD9E0;border-radius:15px;background:#FFFBFA}
+.secret-letter b{display:block;color:#76566A;font-size:.84rem}
+.secret-letter small{display:block;margin-top:3px;color:#9A8790;font-size:.68rem}
+.secret-letter p{margin:10px 0 0;white-space:pre-wrap;color:#4E5B53;font-size:.85rem;line-height:1.5}
+.notification-permission{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px;border-radius:13px;background:#F7EFF2;color:#74596A;font-size:.75rem}
+.notification-permission button,.couple-notification button{flex:none;padding:8px 10px;border:1px solid #E4CCD6;border-radius:11px;background:#FFFBFC;color:#805A6D;font-size:.7rem;font-weight:800}
+.couple-notification{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid #F0E4E8}
+.couple-notification b{display:block;color:#6D5362;font-size:.82rem}
+.couple-notification small{display:block;margin-top:3px;color:#9A8790;font-size:.68rem}
+.couple-notification.read{opacity:.58}
+@media(max-width:360px){.couple-tools{padding:14px}.couple-tool{min-height:105px;padding:11px}.date-idea{align-items:flex-start;flex-direction:column}.idea-toggle{max-width:none;width:100%}.history-summary{align-items:flex-start;flex-direction:column}}
+
 </style>
