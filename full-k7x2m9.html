@@ -1475,6 +1475,8 @@ el("roomCodeModal").addEventListener("click",function(e){if(e.target===el("roomC
 function enterRoom(code){
   if(sget("room")&&sget("room")!==code)clearR();
   ROOM={id:code,members:[]};DN={};REV={};FETCH={};sset("room",code);listenRoom();startGame("room",true);
+  /* После соединения участников сервер повторно проверяет доступ пары. */
+  authP.then(restoreTelegramAccess).catch(function(){});
 }
 el("rcreate").onclick=async function(){
   saveName();roomMsg("Подключаемся к Firebase…");
