@@ -524,6 +524,247 @@ app.post("/api/telegram/access", async (req, res) => {
   }
 });
 
+
+const COUPLE_IDEAS = new Set([
+  "phone-free-evening","cook-together","sunset-walk","dream-trip","first-date-replay",
+  "home-spa","board-game-night","new-hobby","memory-album","breakfast-in-bed",
+  "kindness-day","future-letter"
+]);
+function requireFirebaseReady(res) {
+  if (!firebaseReady) {
+    sendError(res, 503, "firebase_not_configured", "Сервис пары временно недоступен.");
+    return false;
+  }
+  return true;
+}
+async function coupleContext(req, res) {
+  const user = await firebaseUser(req, res);
+  if (!user) return null;
+  const roomCode = String(req.body && req.body.roomCode || "").trim().toUpperCase();
+  if (!/^[A-HJ-NP-Z2-9]{4}(?:-[A-HJ-NP-Z2-9]{4}){2}$/.test(roomCode)) {
+    sendError(res, 400, "invalid_room", "Проверьте код комнаты.");
+    return null;
+  }
+  try {
+    const db = admin.firestore();
+    const roomRef = db.collection("rooms").doc(roomCode);
+    const roomSnap = await roomRef.get();
+    if (!roomSnap.exists) {
+      sendError(res, 404, "room_not_found", "Комната не найдена.");
+      return null;
+    }
+    const room = roomSnap.data() || {};
+    const members = Array.isArray(room.members) ? room.members.map(String) : [];
+    if (!members.includes(user.uid)) {
+      sendError(res, 403, "not_room_member", "У вас нет доступа к этой комнате.");
+      return null;
+    }
+    if (members.length < 1 || members.length > 2) {
+      sendError(res, 409, "invalid_room_members", "Состав комнаты некорректен.");
+      return null;
+    }
+    return { db, user, roomRef, room, roomCode, members, partnerUid: members.find(uid => uid !== user.uid) || null };
+  } catch (error) {
+    console.error("Couple room lookup failed:", error.message);
+    sendError(res, 503, "room_lookup_failed", "Не удалось загрузить комнату. Попробуйте ещё раз.");
+    return null;
+  }
+}
+function validCoupleDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) && Number.isFinite(Date.parse(String(value) + "T00:00:00Z"));
+}
+async function addCoupleActivity(ctx, fields) {
+  if (!ctx.partnerUid) return;
+  const ref = ctx.roomRef.collection("activities").doc(crypto.randomUUID());
+  await ref.set({
+    toUid: ctx.partnerUid,
+    fromUid: ctx.user.uid,
+    type: String(fields.type || "activity"),
+    title: String(fields.title || "Новое событие"),
+    availableAt: Number(fields.availableAt || Date.now()),
+    createdAt: Date.now(),
+    readBy: []
+  });
+}
+app.post("/api/couple/sync", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  try {
+    const now = Date.now();
+    const date = validCoupleDate(req.body && req.body.date) ? String(req.body.date) : new Date().toISOString().slice(0, 10);
+    const name = String(req.body && req.body.name || "").trim().slice(0, 40);
+    if (name) await ctx.roomRef.collection("profiles").doc(ctx.user.uid).set({ uid: ctx.user.uid, name, updatedAt: now }, { merge: true });
+    const profileRefs = ctx.members.map(uid => ctx.roomRef.collection("profiles").doc(uid));
+    const [profileSnaps, mineDailySnap, partnerDailySnap, ideasSnap, lettersSnap, activitiesSnap, doneSnap] = await Promise.all([
+      Promise.all(profileRefs.map(ref => ref.get())),
+      ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.user.uid).get(),
+      ctx.partnerUid ? ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.partnerUid).get() : Promise.resolve(null),
+      ctx.roomRef.collection("ideas").limit(40).get(),
+      ctx.roomRef.collection("letters").limit(100).get(),
+      ctx.roomRef.collection("activities").limit(60).get(),
+      ctx.roomRef.collection("done").get()
+    ]);
+    const profiles = {};
+    profileSnaps.forEach((snap, i) => { profiles[ctx.members[i]] = snap.exists ? (snap.data().name || "") : ""; });
+    const mineDaily = mineDailySnap.exists ? mineDailySnap.data() : null;
+    const partnerDaily = partnerDailySnap && partnerDailySnap.exists ? partnerDailySnap.data() : null;
+    const bothDaily = !!(mineDaily && partnerDaily);
+    const ideas = ideasSnap.docs.map(doc => {
+      const d = doc.data() || {};
+      return { id: doc.id, doneBy: Array.isArray(d.doneBy) ? d.doneBy : [], updatedAt: Number(d.updatedAt || 0) };
+    });
+    const letters = lettersSnap.docs.map(doc => {
+      const d = doc.data() || {};
+      if (d.fromUid !== ctx.user.uid && d.toUid !== ctx.user.uid) return null;
+      const received = d.toUid === ctx.user.uid;
+      const available = Number(d.openAt || 0) <= now;
+      return {
+        id: doc.id, fromUid: d.fromUid, toUid: d.toUid, openAt: Number(d.openAt || 0),
+        createdAt: Number(d.createdAt || 0), openedAt: Number(d.openedAt || 0),
+        body: !received || available ? String(d.body || "") : "",
+        locked: received && !available,
+        senderName: profiles[d.fromUid] || ""
+      };
+    }).filter(Boolean).sort((a, b) => b.createdAt - a.createdAt);
+    const notifications = activitiesSnap.docs.map(doc => {
+      const d = doc.data() || {};
+      if (d.toUid !== ctx.user.uid || Number(d.availableAt || 0) > now) return null;
+      return {
+        id: doc.id, type: String(d.type || "activity"), title: String(d.title || "Новое событие"),
+        createdAt: Number(d.createdAt || 0), read: Array.isArray(d.readBy) && d.readBy.includes(ctx.user.uid)
+      };
+    }).filter(Boolean).sort((a, b) => b.createdAt - a.createdAt).slice(0, 30);
+    const doneMap = {};
+    doneSnap.docs.forEach(doc => {
+      const d = doc.data() || {};
+      const block = Number(d.block), uid = String(d.uid || "");
+      if (block >= 1 && block <= 7 && ctx.members.includes(uid)) {
+        (doneMap[block] || (doneMap[block] = {}))[uid] = Number(d.ts || 0);
+      }
+    });
+    const history = [];
+    for (let block = 1; block <= 7; block++) {
+      const completed = doneMap[block] || {};
+      if (!ctx.partnerUid || !completed[ctx.user.uid] || !completed[ctx.partnerUid]) continue;
+      const [mine, partner] = await Promise.all([
+        ctx.roomRef.collection("answers").doc(block + "_" + ctx.user.uid).get(),
+        ctx.roomRef.collection("answers").doc(block + "_" + ctx.partnerUid).get()
+      ]);
+      if (!mine.exists || !partner.exists) continue;
+      history.push({
+        block,
+        completedAt: Math.max(completed[ctx.user.uid], completed[ctx.partnerUid]),
+        answers: {
+          [ctx.user.uid]: (mine.data() || {}).a || {},
+          [ctx.partnerUid]: (partner.data() || {}).a || {}
+        }
+      });
+    }
+    history.sort((a, b) => a.completedAt - b.completedAt);
+    return res.json({
+      ok: true, roomCode: ctx.roomCode, uid: ctx.user.uid, partnerUid: ctx.partnerUid,
+      members: ctx.members, profiles, roomCreatedAt: Number(ctx.room.created || 0),
+      date, daily: {
+        mine: mineDaily ? { answer: String(mineDaily.answer || ""), questionId: String(mineDaily.questionId || "") } : null,
+        partnerAnswered: !!partnerDaily,
+        bothAnswered: bothDaily,
+        partnerAnswer: bothDaily ? String(partnerDaily.answer || "") : ""
+      },
+      ideas, letters, notifications, history
+    });
+  } catch (error) {
+    console.error("Couple sync failed:", error.message);
+    return sendError(res, 503, "couple_sync_failed", "Не удалось обновить пространство пары.");
+  }
+});
+app.post("/api/couple/daily", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const date = String(req.body && req.body.date || "");
+  const questionId = String(req.body && req.body.questionId || "");
+  const answer = String(req.body && req.body.answer || "").trim();
+  if (!validCoupleDate(date) || !/^[a-z0-9_-]{1,40}$/i.test(questionId) || !answer || answer.length > 2000) {
+    return sendError(res, 400, "invalid_daily_answer", "Напишите ответ длиной до 2000 символов.");
+  }
+  try {
+    const ref = ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.user.uid);
+    const existed = await ref.get();
+    await ref.set({ uid: ctx.user.uid, date, questionId, answer, updatedAt: Date.now() }, { merge: true });
+    if (!existed.exists) await addCoupleActivity(ctx, { type: "daily_answer", title: "Партнёр ответил на вопрос дня" });
+    return res.json({ ok: true, saved: true });
+  } catch (error) {
+    console.error("Daily answer save failed:", error.message);
+    return sendError(res, 503, "daily_save_failed", "Не удалось сохранить ответ. Попробуйте ещё раз.");
+  }
+});
+app.post("/api/couple/idea/toggle", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const ideaId = String(req.body && req.body.ideaId || "");
+  if (!COUPLE_IDEAS.has(ideaId)) return sendError(res, 400, "invalid_idea", "Такой идеи нет в списке.");
+  try {
+    const ref = ctx.roomRef.collection("ideas").doc(ideaId);
+    let completed = false;
+    await ctx.db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const data = snap.exists ? snap.data() : {};
+      const doneBy = Array.isArray(data.doneBy) ? data.doneBy.slice() : [];
+      const hadDone = doneBy.includes(ctx.user.uid);
+      const next = hadDone ? doneBy.filter(uid => uid !== ctx.user.uid) : doneBy.concat(ctx.user.uid);
+      completed = !hadDone;
+      tx.set(ref, { id: ideaId, doneBy: next, updatedAt: Date.now(), updatedBy: ctx.user.uid }, { merge: true });
+    });
+    if (completed) await addCoupleActivity(ctx, { type: "idea_completed", title: "Партнёр отметил идею для свидания" });
+    return res.json({ ok: true, completed });
+  } catch (error) {
+    console.error("Date idea update failed:", error.message);
+    return sendError(res, 503, "idea_update_failed", "Не удалось обновить идею.");
+  }
+});
+app.post("/api/couple/letter/send", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  if (!ctx.partnerUid) return sendError(res, 409, "partner_not_joined", "Сначала пригласите вторую половинку в комнату.");
+  const body = String(req.body && req.body.body || "").trim();
+  const openAt = Number(req.body && req.body.openAt || 0);
+  const now = Date.now();
+  if (!body || body.length > 3000 || !Number.isFinite(openAt) || openAt < now || openAt > now + 366 * 24 * 60 * 60 * 1000) {
+    return sendError(res, 400, "invalid_letter", "Проверьте текст и дату открытия послания.");
+  }
+  try {
+    const id = crypto.randomUUID();
+    await ctx.roomRef.collection("letters").doc(id).set({
+      fromUid: ctx.user.uid, toUid: ctx.partnerUid, body, openAt, createdAt: now, openedAt: 0
+    });
+    await addCoupleActivity(ctx, { type: "letter", title: "Для тебя приготовлено послание", availableAt: openAt });
+    return res.json({ ok: true, letterId: id });
+  } catch (error) {
+    console.error("Secret letter save failed:", error.message);
+    return sendError(res, 503, "letter_send_failed", "Не удалось отправить послание.");
+  }
+});
+app.post("/api/couple/notifications/read", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const activityId = String(req.body && req.body.activityId || "");
+  if (!/^[A-Za-z0-9_-]{10,80}$/.test(activityId)) return sendError(res, 400, "invalid_activity", "Уведомление не найдено.");
+  try {
+    const ref = ctx.roomRef.collection("activities").doc(activityId);
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().toUid !== ctx.user.uid) return sendError(res, 404, "activity_not_found", "Уведомление не найдено.");
+    await ref.update({ readBy: admin.firestore.FieldValue.arrayUnion(ctx.user.uid) });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Notification read failed:", error.message);
+    return sendError(res, 503, "notification_update_failed", "Не удалось отметить уведомление.");
+  }
+});
+
 async function configureWebhook() {
   if (!BOT_TOKEN) return;
   try {
