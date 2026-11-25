@@ -1984,7 +1984,7 @@ el("suggestionForm").addEventListener("submit",function(e){
     });
     window.addEventListener("appinstalled",showInstalledState);
   }
-  if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js").catch(function(e){console.warn("PWA worker registration failed",e);});});}
+  if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/sw.js",{updateViaCache:"none"}).then(function(reg){return reg.update();}).catch(function(e){console.warn("PWA worker registration failed",e);});});}
 })();
 authP.then(restoreTelegramAccess).catch(function(){});
 window.addEventListener("pagehide",function(){if(MODE==="room")writePresence(false)});
