@@ -2087,22 +2087,32 @@ function similaritySummary(){
   return {exact:exact,shared:shared};
 }
 function renderHistoryPanel(){
-  var state=COUPLE_STATE,history=state.history||[],names=state.profiles||{},mineName=names[state.uid]||"Вы",partnerName=names[state.partnerUid]||"Партнёр";
-  var html='<div class="couple-profile-line"><b>'+coupleEscape(mineName)+' & '+coupleEscape(partnerName)+'</b><span>Вместе в «Наедине» с '+coupleEscape(coupleFormatDate(state.roomCreatedAt))+'</span></div>';
-  if(!state.partnerUid)return html+'<p class="couple-empty">История станет общей, когда в комнату присоединится вторая половинка.</p>';
-  if(!history.length)return html+'<p class="couple-empty">Пока нет завершённых вместе тем. Когда вы оба закончите первый блок, здесь появятся ваши ответы и совпадения ♡</p>';
-  var match=similaritySummary();
-  html+='<div class="history-summary"><b>'+history.length+' '+(history.length===1?"общая тема":"общих тем")+'</b><span>'+match.exact+' точных совпадений в ответах</span></div>';
-  if(match.shared.length)html+='<div class="similarity-card"><b>Что у вас перекликается</b>'+match.shared.slice(0,5).map(function(x){return '<p><small>'+coupleEscape(TITLES[x.block])+'</small>'+coupleEscape(x.kind)+' · '+coupleEscape(x.q)+'</p>'}).join("")+'</div>';
-  history.slice().reverse().forEach(function(item){
-    var mine=item.answers&&item.answers[state.uid]||{},partner=item.answers&&item.answers[state.partnerUid]||{},qs=B[item.block]||[];
-    html+='<details class="history-topic"><summary>'+coupleEscape(TITLES[item.block]||("Тема "+item.block))+'<small>'+coupleEscape(coupleFormatDate(item.completedAt))+'</small></summary>';
-    qs.forEach(function(q,id){
-      var a=mine[id]||"",b=partner[id]||"";if(!a&&!b)return;
-      html+='<article class="history-answer"><b>'+coupleEscape(q)+'</b>'+(a?'<p><small>'+coupleEscape(mineName)+'</small>'+coupleEscape(a)+'</p>':'')+(b?'<p><small>'+coupleEscape(partnerName)+'</small>'+coupleEscape(b)+'</p>':'')+'</article>';
-    });
-    html+='</details>';
+  var state=COUPLE_STATE,history=state.history||[],memories=state.coupleMemories||[],names=state.profiles||{},mineName=names[state.uid]||"Вы",partnerName=names[state.partnerUid]||"Партнёр";
+  var html='<div class="couple-profile-line"><b>'+coupleEscape(mineName)+(state.partnerUid?' & '+coupleEscape(partnerName):'')+'</b><span>Общая история вашей пары</span></div>';
+  html+='<p class="couple-panel-lead">Добавляйте важные моменты в любое время. Не нужно ждать партнёра — он увидит запись, когда откроет комнату.</p>';
+  html+='<form id="coupleMemoryForm" class="couple-form memory-form"><label for="coupleMemoryTitle">Что запомним?</label><input id="coupleMemoryTitle" maxlength="100" required placeholder="Например, наша первая поездка"><label for="coupleMemoryDate">Когда это было?</label><input id="coupleMemoryDate" type="date" value="'+coupleDateKey()+'" required><label for="coupleMemoryNote">Расскажите об этом (необязательно)</label><textarea id="coupleMemoryNote" maxlength="1500" rows="3" placeholder="Что особенно запомнилось…"></textarea><label class="memory-favorite"><input id="coupleMemoryFavorite" type="checkbox"> Отметить как особенное ♡</label><button class="btn main" type="submit">Добавить в нашу историю</button><p class="couple-status" id="coupleActionStatus"></p></form>';
+  html+='<div class="memory-list-heading"><b>Наши воспоминания</b><span>'+memories.length+'</span></div>';
+  if(!memories.length)html+='<p class="couple-empty">Здесь пока пусто. Сохраните первое воспоминание — даже если сейчас вы в комнате одни ♡</p>';
+  memories.forEach(function(item){
+    var author=names[item.createdBy]||(item.createdBy===state.uid?mineName:partnerName);
+    html+='<article class="couple-memory'+(item.favorite?' favorite':'')+'"><div class="couple-memory-meta"><span>'+coupleEscape(coupleFormatDate(Date.parse(item.date+"T00:00:00Z")))+'</span><span>'+coupleEscape(author)+'</span></div><b>'+coupleEscape(item.title)+'</b>'+(item.favorite?'<span class="memory-star">Особенный момент ♡</span>':'')+(item.note?'<p>'+coupleEscape(item.note)+'</p>':'')+'</article>';
   });
+  if(state.partnerUid&&history.length){
+    var match=similaritySummary();
+    html+='<div class="history-summary"><b>'+history.length+' '+(history.length===1?"общая тема":"общих тем")+'</b><span>'+match.exact+' точных совпадений в ответах</span></div>';
+    if(match.shared.length)html+='<div class="similarity-card"><b>Что у вас перекликается</b>'+match.shared.slice(0,5).map(function(x){return '<p><small>'+coupleEscape(TITLES[x.block])+'</small>'+coupleEscape(x.kind)+' · '+coupleEscape(x.q)+'</p>'}).join("")+'</div>';
+    history.slice().reverse().forEach(function(item){
+      var mine=item.answers&&item.answers[state.uid]||{},partner=item.answers&&item.answers[state.partnerUid]||{},qs=B[item.block]||[];
+      html+='<details class="history-topic"><summary>'+coupleEscape(TITLES[item.block]||("Тема "+item.block))+'<small>'+coupleEscape(coupleFormatDate(item.completedAt))+'</small></summary>';
+      qs.forEach(function(q,id){
+        var a=mine[id]||"",b=partner[id]||"";if(!a&&!b)return;
+        html+='<article class="history-answer"><b>'+coupleEscape(q)+'</b>'+(a?'<p><small>'+coupleEscape(mineName)+'</small>'+coupleEscape(a)+'</p>':'')+(b?'<p><small>'+coupleEscape(partnerName)+'</small>'+coupleEscape(b)+'</p>':'')+'</article>';
+      });
+      html+='</details>';
+    });
+  }else if(state.partnerUid){
+    html+='<p class="couple-empty">Когда вы оба завершите тематические блоки, здесь также появятся ваши ответы и совпадения.</p>';
+  }
   return html;
 }
 function renderIdeasPanel(){
@@ -2214,6 +2224,15 @@ async function addCoupleDate(form){
   catch(e){status.textContent=e.message||"Не удалось добавить дату."}
   finally{button.disabled=false}
 }
+async function addCoupleMemory(form){
+  var title=el("coupleMemoryTitle").value.trim(),date=el("coupleMemoryDate").value,note=el("coupleMemoryNote").value.trim(),favorite=el("coupleMemoryFavorite").checked,status=el("coupleActionStatus"),button=form.querySelector('button[type="submit"]');
+  if(!title||!date){status.textContent="Укажите название и дату воспоминания.";return}
+  button.disabled=true;button.textContent="Сохраняем…";
+  try{await coupleApi("/api/couple/memory/add",{roomCode:ROOM.id,title:title,date:date,note:note,favorite:favorite});await syncCoupleData(false)}
+  catch(e){status.textContent=e.message||"Не удалось сохранить воспоминание."}
+  finally{button.disabled=false;button.textContent="Добавить в нашу историю"}
+}
+
 async function startGuessGame(restart){
   var button=el(restart?"restartGuessGame":"startGuessGame");if(button)button.disabled=true;
   try{await coupleApi("/api/couple/game/guess/start",{roomCode:ROOM.id,restart:!!restart});await syncCoupleData(false)}
@@ -2285,6 +2304,7 @@ el("couplePanelContent").addEventListener("submit",function(e){
   if(e.target.id==="secretLetterForm"){e.preventDefault();sendSecretLetter(e.target)}
   if(e.target.id==="complimentForm"){e.preventDefault();sendCompliment(e.target)}
   if(e.target.id==="coupleDateForm"){e.preventDefault();addCoupleDate(e.target)}
+  if(e.target.id==="coupleMemoryForm"){e.preventDefault();addCoupleMemory(e.target)}
 });
 el("couplePanelContent").addEventListener("click",function(e){
   var idea=e.target.closest?e.target.closest("[data-idea-toggle]"):null;
@@ -2604,4 +2624,17 @@ authP.then(async function(){
 .guess-result-item b{color:#8B6B7B;font-size:.72rem}
 .guess-result-item span{color:#766771;font-size:.74rem}
 
+
+/* Couple memories — compact shared timeline */
+.memory-form{margin:12px 0 18px;padding:14px;border:1px solid rgba(151,111,117,.18);border-radius:18px;background:rgba(255,255,255,.52)}
+.memory-favorite{display:flex!important;align-items:center;gap:9px;margin:2px 0 4px!important;font-weight:500!important}
+.memory-favorite input{width:18px;height:18px;accent-color:#bd8292}
+.memory-list-heading{display:flex;align-items:center;justify-content:space-between;margin:16px 2px 9px;font-size:14px}
+.memory-list-heading span{min-width:24px;text-align:center;padding:3px 8px;border-radius:20px;background:#f2e5e6;color:#855f69;font-size:12px}
+.couple-memory{position:relative;margin:9px 0;padding:13px 14px;border:1px solid rgba(151,111,117,.16);border-radius:16px;background:rgba(255,255,255,.7)}
+.couple-memory.favorite{border-color:rgba(190,132,147,.42);background:linear-gradient(135deg,rgba(255,249,249,.96),rgba(248,237,239,.88))}
+.couple-memory-meta{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;color:#927b80;font-size:11px}
+.couple-memory>b{display:block;color:#59474c;font-size:14px}
+.couple-memory p{margin:7px 0 0;color:#725f64;font-size:13px;line-height:1.45;white-space:pre-wrap}
+.memory-star{display:inline-block;margin-top:6px;color:#a76c7b;font-size:11px}
 </style>
