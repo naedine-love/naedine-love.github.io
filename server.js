@@ -838,7 +838,7 @@ app.post("/api/couple/game/guess/start", async (req, res) => {
         tx.set(ref, state);
       } else state = current;
     });
-    return res.json({ ok: true, state });
+    return res.json({ ok: true, state: { round: Number(state.round || 0), completed: !!state.completed, rounds: Array.isArray(state.rounds) ? state.rounds : [], answeredByMe: !!((state.answers || {})[ctx.user.uid]), partnerAnswered: !!(ctx.partnerUid && (state.answers || {})[ctx.partnerUid]) } });
   } catch (error) {
     console.error("Guess game start failed:", error.message);
     return sendError(res, 503, "guess_start_failed", "Не удалось открыть игру.");
@@ -875,7 +875,7 @@ app.post("/api/couple/game/guess/answer", async (req, res) => {
       tx.set(ref, next, { merge: true });
       state = next;
     });
-    return res.json({ ok: true, state });
+    return res.json({ ok: true, state: { round: Number(state.round || 0), completed: !!state.completed, rounds: Array.isArray(state.rounds) ? state.rounds : [], answeredByMe: !!((state.answers || {})[ctx.user.uid]), partnerAnswered: !!(ctx.partnerUid && (state.answers || {})[ctx.partnerUid]) } });
   } catch (error) {
     const code = error.message === "already_answered" ? "already_answered" : error.message === "round_closed" ? "round_closed" : "guess_answer_failed";
     return sendError(res, code === "guess_answer_failed" ? 503 : 409, code, "Не удалось сохранить ответ. Обновите игру.");
