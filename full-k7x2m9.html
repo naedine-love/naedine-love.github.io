@@ -1319,6 +1319,7 @@ var FB_CFG={apiKey:"AIzaSyCnLhxurSJ8s28GWYcjSjNe_pkgkiwTBrw",authDomain:"koloda-
 var blk=1, list=[], i=0, MODE=null, MEM={}, hideP={1:false,2:false};
 var db=null, UID=null, ROOM=null, DN={}, REV={}, FETCH={}, PRG={}, PRES={}, unsubs=[], finArmed=false, progressTimers={}, presenceTimer=null, typingTimer=null, isTyping=false;
 var COUPLE_STATE=null, coupleSyncTimer=null, couplePanelOpen="", coupleSyncBusy=false, coupleSyncAgain=false;
+var coupleSurpriseIdeaId="";
 var el=function(id){return document.getElementById(id)};
 function storageKey(k){k=String(k);return k.charAt(0)==="R"&&ROOM&&ROOM.id?"kp_R_"+encodeURIComponent(ROOM.id)+"_"+k.slice(1):"kp_"+k}
 function sget(k){var key=storageKey(k);try{var v=localStorage.getItem(key);if(v!==null)return v}catch(e){}return MEM[key]||""}
@@ -2041,7 +2042,7 @@ function renderCoupleFeatures(){
 function openCouplePanel(kind){
   if(MODE!=="room"||!ROOM)return;
   couplePanelOpen=kind;el("couplePanel").hidden=false;
-  el("couplePanelTitle").textContent=({daily:"Вопрос дня",history:"История вашей пары",ideas:"Идеи для свиданий",letters:"Тайные послания",notifications:"Уведомления"}[kind]||"Ваше пространство");
+  el("couplePanelTitle").textContent=({daily:"Вопрос дня",history:"История вашей пары",ideas:"Идеи для двоих",letters:"Тайные послания",notifications:"Уведомления",compliment:"Комплимент дня",guess:"Насколько хорошо ты меня знаешь?",truth:"Правда или действие",dates:"Наши даты"}[kind]||"Ваше пространство");
   el("couplePanelContent").innerHTML='<p class="couple-loading">Загружаем ваше пространство…</p>';
   if(COUPLE_STATE)renderCouplePanel();else syncCoupleData(false);
   el("couplePanel").scrollIntoView({behavior:"smooth",block:"start"});
@@ -2055,6 +2056,10 @@ function renderCouplePanel(){
   if(couplePanelOpen==="ideas")html=renderIdeasPanel();
   if(couplePanelOpen==="letters")html=renderLettersPanel();
   if(couplePanelOpen==="notifications")html=renderNotificationsPanel();
+  if(couplePanelOpen==="compliment")html=renderComplimentPanel();
+  if(couplePanelOpen==="guess")html=renderGuessPanel();
+  if(couplePanelOpen==="truth")html=renderTruthPanel();
+  if(couplePanelOpen==="dates")html=renderDatesPanel();
   el("couplePanelContent").innerHTML=html;
 }
 function renderDailyPanel(){
@@ -2102,10 +2107,11 @@ function renderHistoryPanel(){
   return html;
 }
 function renderIdeasPanel(){
-  var state=COUPLE_STATE,progress=state.ideas||[];
-  return '<p class="couple-panel-lead">Отмечайте идеи, которые уже осуществили. Когда галочки поставите оба, идея станет вашим общим воспоминанием.</p><div class="date-idea-list">'+DATE_IDEAS.map(function(idea){
-    var item=progress.find(function(x){return x.id===idea.id})||{doneBy:[]},mine=item.doneBy.includes(state.uid),partner=state.partnerUid&&item.doneBy.includes(state.partnerUid),done=mine&&partner;
-    return '<article class="date-idea'+(done?' completed':'')+'"><div><b>'+coupleEscape(idea.title)+'</b><p>'+coupleEscape(idea.desc)+'</p><small>'+(done?'Сделали вместе ♡':(mine?'Вы отметили · ':'' )+(partner?'Партнёр отметил':'Пока не отмечено'))+'</small></div><button type="button" data-idea-toggle="'+idea.id+'" class="idea-toggle'+(mine?' selected':'')+'">'+(mine?'Отменить':'Мы сделали')+'</button></article>';
+  var state=COUPLE_STATE,progress=state.ideas||[],surprise=DATE_IDEAS.find(function(x){return x.id===coupleSurpriseIdeaId});
+  var surpriseHtml=surprise?'<div class="daily-question-card"><span class="eyebrow">ВАША ИДЕЯ-СЮРПРИЗ</span><p>'+coupleEscape(surprise.title)+'</p><small>'+coupleEscape(surprise.desc)+'</small></div>':'';
+  return '<p class="couple-panel-lead">Получите случайную идею или сохраняйте то, что хотите попробовать вместе.</p><button class="btn main" type="button" id="surpriseDateIdea">Удиви нас ✦</button>'+surpriseHtml+'<div class="date-idea-list">'+DATE_IDEAS.map(function(idea){
+    var item=progress.find(function(x){return x.id===idea.id})||{doneBy:[],wantBy:[]},mineDone=item.doneBy.includes(state.uid),partnerDone=state.partnerUid&&item.doneBy.includes(state.partnerUid),done=mineDone&&partnerDone,mineWant=(item.wantBy||[]).includes(state.uid),partnerWant=state.partnerUid&&(item.wantBy||[]).includes(state.partnerUid);
+    return '<article class="date-idea'+(done?' completed':'')+'"><div><b>'+coupleEscape(idea.title)+'</b><p>'+coupleEscape(idea.desc)+'</p><small>'+(done?'Сделали вместе ♡':(mineWant&&partnerWant?'Оба хотят попробовать':mineWant?'Вы хотите · ':partnerWant?'Партнёр хочет · ':'Пока без отметок'))+'</small><div class="idea-actions"><button type="button" data-idea-want="'+idea.id+'" class="idea-toggle'+(mineWant?' selected':'')+'">'+(mineWant?'Не хочу':'Хочу попробовать')+'</button><button type="button" data-idea-toggle="'+idea.id+'" class="idea-toggle'+(mineDone?' selected':'')+'">'+(mineDone?'Отменить':'Сделали')+'</button></div></div></article>';
   }).join("")+'</div><p class="couple-status" id="coupleActionStatus"></p>';
 }
 function defaultLetterDateTime(){
@@ -2120,6 +2126,44 @@ function renderLettersPanel(){
   }).join(""):'<p class="couple-empty">Здесь будут письма, которые вы отправите друг другу в будущее.</p>';
   if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Сначала пригласите вторую половинку в комнату, а потом сможете отправлять тайные послания.</p>';
   return '<p class="couple-panel-lead">Напишите что-то тёплое и выберите момент, когда партнёр сможет это прочитать.</p><form id="secretLetterForm" class="couple-form"><label for="secretLetterBody">Текст послания</label><textarea id="secretLetterBody" maxlength="3000" rows="4" required placeholder="Оставьте несколько важных слов…"></textarea><label for="secretLetterDate">Когда открыть</label><input id="secretLetterDate" type="datetime-local" min="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" value="'+defaultLetterDateTime()+'" required><button class="btn main" type="submit">Запечатать послание 💌</button><p class="couple-status" id="coupleActionStatus"></p></form><h4 class="couple-subheading">Ваши письма</h4>'+list;
+}
+function renderComplimentPanel(){
+  var c=COUPLE_STATE.compliment||{};
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Комплименты станут общими, когда в комнату присоединится вторая половинка.</p>';
+  var mine=c.mine?'<div class="daily-reveal"><b>Ваш комплимент отправлен ♡</b><p>'+coupleEscape(c.mine)+'</p></div>':'<form id="complimentForm" class="couple-form"><label for="complimentText">Что тебе особенно нравится в партнёре?</label><textarea id="complimentText" rows="3" maxlength="500" required placeholder="Напиши что-нибудь от сердца…"></textarea><button class="btn main" type="submit">Отправить комплимент</button><p class="couple-status" id="coupleActionStatus"></p></form>';
+  var partner=c.bothSent?'<div class="daily-reveal"><b>Комплимент от партнёра</b><p>'+coupleEscape(c.partnerText)+'</p></div>':(c.partnerSent?'<p class="couple-wait">Партнёр уже отправил комплимент. Ваш откроется, когда вы тоже отправите свой.</p>':'<p class="couple-wait">Комплимент партнёра пока скрыт. Вы увидите его, когда отправите оба.</p>');
+  return '<p class="couple-panel-lead">Каждый день оставляйте друг другу по одному тёплому сообщению. Откроются одновременно.</p>'+mine+partner;
+}
+function renderGuessPanel(){
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
+  var g=COUPLE_STATE.games&&COUPLE_STATE.games.guess;
+  if(!g)return '<p class="couple-panel-lead">Десять вопросов. Каждый выбирает ответ независимо, а результаты открываются только после выбора обоих.</p><button class="btn main" type="button" id="startGuessGame">Начать игру ♡</button>';
+  if(g.completed){
+    var score=(g.rounds||[]).filter(function(r){return r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid]}).length;
+    return '<div class="history-summary"><b>Игра завершена!</b><span>'+score+' совпадений из 10</span></div><p class="couple-panel-lead">Посмотрите, в чём ваши взгляды совпали, а где вы удивили друг друга.</p><button class="btn main" type="button" id="restartGuessGame">Сыграть ещё раз</button>';
+  }
+  var index=Math.max(0,Math.min(9,Number(g.round)||0)),q=GUESS_QUESTIONS[index];
+  var progress='<p class="couple-panel-lead">Вопрос '+(index+1)+' из 10</p>';
+  if(g.answeredByMe)return progress+'<div class="couple-wait">Ваш ответ сохранён. Ждём выбор партнёра — ответы пока скрыты ♡</div>';
+  return progress+'<div class="daily-question-card"><p>'+coupleEscape(q.q)+'</p></div><div class="guess-options">'+q.a.map(function(a,i){return '<button type="button" data-guess-choice="'+i+'">'+coupleEscape(a)+'</button>'}).join('')+'</div><p class="couple-status" id="coupleActionStatus"></p>';
+}
+function renderTruthPanel(){
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
+  var g=COUPLE_STATE.games&&COUPLE_STATE.games.truth||{},pending=g.pending,uid=COUPLE_STATE.uid,turnUid=g.currentTurnUid||COUPLE_STATE.members[0],mine=turnUid===uid;
+  var history=(g.history||[]).slice(-3).reverse().map(function(item){return '<p class="truth-history-item"><small>'+coupleEscape(({romance:"Романтика",humor:"Юмор",honesty:"Откровенность",adult:"18+"}[item.category]||"Игра"))+' · '+(item.kind==="truth"?"Правда":"Действие")+'</small>'+coupleEscape(item.prompt)+'</p>'}).join('');
+  if(pending)return '<div class="daily-question-card"><span class="eyebrow">'+coupleEscape(({romance:"РОМАНТИКА",humor:"ЮМОР",honesty:"ОТКРОВЕННОСТЬ",adult:"18+"}[pending.category]||"ВАШ ХОД"))+' · '+(pending.kind==="truth"?"ПРАВДА":"ДЕЙСТВИЕ")+'</span><p>'+coupleEscape(pending.prompt)+'</p></div>'+(pending.byUid===uid?'<p class="couple-panel-lead">Ваш ход. Выполните задание или ответьте, затем передайте очередь партнёру.</p><button class="btn main" type="button" id="completeTruthTurn">Готово, передать ход</button>':'<p class="couple-wait">Партнёр выбрал задание. После его выполнения очередь перейдёт к вам.</p>')+history;
+  if(!mine)return '<div class="couple-wait">Сейчас очередь партнёра. Скоро он выберет правду или действие для вас обоих.</div>'+history;
+  var cats=[["romance","♡ Романтика"],["humor","☀ Юмор"],["honesty","✦ Откровенность"],["adult","🔥 18+"]].map(function(c){return '<div class="truth-category"><b>'+c[1]+'</b><div><button type="button" data-truth-choice="'+c[0]+'|truth">Правда</button><button type="button" data-truth-choice="'+c[0]+'|action">Действие</button></div></div>'}).join('');
+  return '<p class="couple-panel-lead">Ваш ход. Выберите настроение и решите: правда или действие. Любое задание можно пропустить.</p>'+cats+history;
+}
+function renderDatesPanel(){
+  var dates=COUPLE_STATE.coupleDates||[],today=coupleDateKey();
+  var list=dates.length?dates.map(function(d){
+    var days=Math.ceil((Date.parse(d.date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);
+    var when=days<0?"Уже было":days===0?"Сегодня":days===1?"Завтра":"Через "+days+" дн.";
+    return '<article class="couple-date-item"><div><b>'+coupleEscape(d.title)+'</b><small>'+coupleEscape(coupleFormatDate(Date.parse(d.date+"T00:00:00Z")))+' · '+when+'</small>'+(d.note?'<p>'+coupleEscape(d.note)+'</p>':'')+'</div></article>';
+  }).join(''):'<p class="couple-empty">Добавьте ваши первые важные даты — они будут видны обоим.</p>';
+  return '<form id="coupleDateForm" class="couple-form"><label for="coupleDateTitle">Что отмечаем?</label><input id="coupleDateTitle" maxlength="80" required placeholder="Например, день знакомства"><label for="coupleDateValue">Дата</label><input id="coupleDateValue" type="date" required><label for="coupleDateNote">Заметка (необязательно)</label><input id="coupleDateNote" maxlength="300" placeholder="Маленькое воспоминание…"><button class="btn main" type="submit">Добавить дату</button><p class="couple-status" id="coupleActionStatus"></p></form><h4 class="couple-subheading">Ваш календарь</h4>'+list;
 }
 function renderNotificationsPanel(){
   var notifications=COUPLE_STATE.notifications||[],unread=notifications.filter(function(n){return !n.read}).length;
