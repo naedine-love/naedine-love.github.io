@@ -624,7 +624,7 @@ app.post("/api/couple/sync", async (req, res) => {
     const bothDaily = !!(mineDaily && partnerDaily);
     const ideas = ideasSnap.docs.map(doc => {
       const d = doc.data() || {};
-      return { id: doc.id, doneBy: Array.isArray(d.doneBy) ? d.doneBy : [], updatedAt: Number(d.updatedAt || 0) };
+      return { id: doc.id, doneBy: Array.isArray(d.doneBy) ? d.doneBy : [], wantBy: Array.isArray(d.wantBy) ? d.wantBy : [], updatedAt: Number(d.updatedAt || 0) };
     });
     const letters = lettersSnap.docs.map(doc => {
       const d = doc.data() || {};
@@ -736,17 +736,20 @@ app.post("/api/couple/idea/toggle", async (req, res) => {
   if (!COUPLE_IDEAS.has(ideaId)) return sendError(res, 400, "invalid_idea", "Такой идеи нет в списке.");
   try {
     const ref = ctx.roomRef.collection("ideas").doc(ideaId);
+    const mode = String(req.body && req.body.mode || "done");
+    if (!["done", "want"].includes(mode)) return sendError(res, 400, "invalid_idea_mode", "Неизвестное действие.");
     let completed = false;
     await ctx.db.runTransaction(async tx => {
       const snap = await tx.get(ref);
       const data = snap.exists ? snap.data() : {};
-      const doneBy = Array.isArray(data.doneBy) ? data.doneBy.slice() : [];
-      const hadDone = doneBy.includes(ctx.user.uid);
-      const next = hadDone ? doneBy.filter(uid => uid !== ctx.user.uid) : doneBy.concat(ctx.user.uid);
-      completed = !hadDone;
-      tx.set(ref, { id: ideaId, doneBy: next, updatedAt: Date.now(), updatedBy: ctx.user.uid }, { merge: true });
+      const field = mode === "want" ? "wantBy" : "doneBy";
+      const values = Array.isArray(data[field]) ? data[field].slice() : [];
+      const had = values.includes(ctx.user.uid);
+      const next = had ? values.filter(uid => uid !== ctx.user.uid) : values.concat(ctx.user.uid);
+      completed = !had;
+      tx.set(ref, { id: ideaId, [field]: next, updatedAt: Date.now(), updatedBy: ctx.user.uid }, { merge: true });
     });
-    if (completed) await addCoupleActivity(ctx, { type: "idea_completed", title: "Партнёр отметил идею для свидания" });
+    if (completed) await addCoupleActivity(ctx, { type: mode === "want" ? "idea_wanted" : "idea_completed", title: mode === "want" ? "Партнёр хочет попробовать идею для свидания" : "Партнёр отметил идею для свидания" });
     return res.json({ ok: true, completed });
   } catch (error) {
     console.error("Date idea update failed:", error.message);
