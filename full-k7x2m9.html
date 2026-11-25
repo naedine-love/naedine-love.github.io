@@ -238,6 +238,11 @@ h1{font-family:"Manrope",sans-serif;font-size:2.35rem;letter-spacing:-.045em;col
 #roomCodeModal .modal-actions{display:grid;gap:10px}
 
 
+/* Быстрый переход к пропущенным вопросам в конце блока */
+#fin .missing-jump-title{margin:12px 0 8px;font-weight:700;color:#765365}
+#fin .missing-jump-list{display:grid;gap:8px;margin:8px 0 12px}
+#fin .missing-jump-btn{width:100%;padding:12px 14px;border:1px solid #E8C9D2;border-radius:14px;background:linear-gradient(120deg,#FFF9FA,#F7EAF0);color:#684858;text-align:left;font:inherit;font-size:.9rem;line-height:1.35;font-weight:700;cursor:pointer}
+#fin .missing-jump-btn:active{transform:scale(.99)}
 /* Тёплые состояния сохранения, завершения и открытия общей истории */
 .answer-save{display:flex;align-items:center;gap:7px;margin:9px 3px 0;color:#7B8C80;font-size:.72rem;line-height:1.4;min-height:20px}
 .answer-save .save-mark{display:inline-grid;place-items:center;width:17px;height:17px;border-radius:50%;background:#E6F1E8;color:#527D6E;font-weight:900;font-size:.68rem;flex:none}
@@ -1868,6 +1873,18 @@ function renderFin(){
     if(missing.length){
       add("p","Пока нельзя отправить ответы: заполните все вопросы этого блока.");
       add("p","Осталось без ответа: "+missing.length+". Вернитесь к пропущенным карточкам — ответы партнёру не отправятся, пока не заполните каждую.");
+      var jumpTitle=add("p","Нажмите на любой пропущенный вопрос — сразу перейдёте к нему:");
+      jumpTitle.className="missing-jump-title";
+      var jumpList=document.createElement("div");jumpList.className="missing-jump-list";
+      missing.forEach(function(id){
+        var pos=list.findIndex(function(item){return !item.bridge&&!item.intro&&item.id===id});
+        if(pos<0)return;
+        var jump=document.createElement("button");jump.type="button";jump.className="missing-jump-btn";
+        jump.textContent="Вопрос "+(id+1)+" · "+B[blk][id];
+        jump.onclick=function(){i=pos;draw(-1);window.scrollTo({top:0,behavior:"smooth"})};
+        jumpList.appendChild(jump);
+      });
+      f.appendChild(jumpList);
     }else{
       var b2=add("button",finArmed?"Точно завершить? Ответы изменить нельзя":"Завершить и скрыть ответы");b2.className="btn main";
       b2.onclick=function(){
