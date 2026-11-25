@@ -605,6 +605,13 @@ app.post("/api/couple/sync", async (req, res) => {
       ctx.roomRef.collection("activities").orderBy("createdAt", "desc").limit(60).get(),
       ctx.roomRef.collection("done").get()
     ]);
+    const [mineComplimentSnap, partnerComplimentSnap, datesSnap, guessSnap, truthSnap] = await Promise.all([
+      ctx.roomRef.collection("compliments").doc(date + "_" + ctx.user.uid).get(),
+      ctx.partnerUid ? ctx.roomRef.collection("compliments").doc(date + "_" + ctx.partnerUid).get() : Promise.resolve(null),
+      ctx.roomRef.collection("coupleDates").orderBy("date", "asc").limit(100).get(),
+      ctx.roomRef.collection("games").doc("guess").get(),
+      ctx.roomRef.collection("games").doc("truth").get()
+    ]);
     const profiles = {};
     profileSnaps.forEach((snap, i) => { profiles[ctx.members[i]] = snap.exists ? (snap.data().name || "") : ""; });
     const entitlementSnaps = ctx.members.length === 2
@@ -677,7 +684,23 @@ app.post("/api/couple/sync", async (req, res) => {
         bothAnswered: bothDaily,
         partnerAnswer: bothDaily ? String(partnerDaily.answer || "") : ""
       },
-      ideas, letters, notifications, history
+      ideas, letters, notifications, history,
+      compliment: {
+        mine: mineComplimentSnap.exists ? String((mineComplimentSnap.data() || {}).text || "") : "",
+        partnerSent: !!partnerComplimentSnap && partnerComplimentSnap.exists,
+        bothSent: mineComplimentSnap.exists && !!partnerComplimentSnap && partnerComplimentSnap.exists,
+        partnerText: mineComplimentSnap.exists && partnerComplimentSnap && partnerComplimentSnap.exists
+          ? String((partnerComplimentSnap.data() || {}).text || "") : ""
+      },
+      coupleDates: datesSnap.docs.map(doc => {
+        const d = doc.data() || {};
+        return { id: doc.id, title: String(d.title || ""), date: String(d.date || ""),
+          note: String(d.note || ""), createdBy: String(d.createdBy || ""), createdAt: Number(d.createdAt || 0) };
+      }),
+      games: {
+        guess: guessSnap.exists ? (guessSnap.data() || {}) : null,
+        truth: truthSnap.exists ? (truthSnap.data() || {}) : null
+      }
     });
   } catch (error) {
     console.error("Couple sync failed:", error.message);
@@ -753,6 +776,156 @@ app.post("/api/couple/letter/send", async (req, res) => {
     return sendError(res, 503, "letter_send_failed", "Не удалось отправить послание.");
   }
 });
+app.post("/api/couple/compliment/send", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  if (!ctx.partnerUid) return sendError(res, 409, "partner_not_joined", "Сначала пригласите вторую половинку в комнату.");
+  const date = String(req.body && req.body.date || "");
+  const text = String(req.body && req.body.text || "").trim();
+  if (!validCoupleDate(date) || !text || text.length > 500) return sendError(res, 400, "invalid_compliment", "Напишите комплимент длиной до 500 символов.");
+  try {
+    const ref = ctx.roomRef.collection("compliments").doc(date + "_" + ctx.user.uid);
+    const existed = await ref.get();
+    await ref.set({ uid: ctx.user.uid, date, text, updatedAt: Date.now() }, { merge: true });
+    if (!existed.exists) await addCoupleActivity(ctx, { type: "compliment", title: "Партнёр отправил комплимент дня" });
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error("Compliment save failed:", error.message);
+    return sendError(res, 503, "compliment_save_failed", "Не удалось сохранить комплимент.");
+  }
+});
+app.post("/api/couple/date/add", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const title = String(req.body && req.body.title || "").trim().slice(0, 80);
+  const date = String(req.body && req.body.date || "");
+  const note = String(req.body && req.body.note || "").trim().slice(0, 300);
+  if (!title || !validCoupleDate(date)) return sendError(res, 400, "invalid_couple_date", "Укажите название и корректную дату.");
+  try {
+    const id = crypto.randomUUID();
+    await ctx.roomRef.collection("coupleDates").doc(id).set({ title, date, note, createdBy: ctx.user.uid, createdAt: Date.now() });
+    await addCoupleActivity(ctx, { type: "couple_date", title: "В календаре пары появилась новая дата" });
+    return res.json({ ok: true, id });
+  } catch (error) {
+    console.error("Couple date save failed:", error.message);
+    return sendError(res, 503, "couple_date_save_failed", "Не удалось добавить дату.");
+  }
+});
+app.post("/api/couple/game/guess/start", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  if (!ctx.partnerUid) return sendError(res, 409, "partner_not_joined", "Для игры нужны оба участника комнаты.");
+  try {
+    const ref = ctx.roomRef.collection("games").doc("guess");
+    let state;
+    await ctx.db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const current = snap.exists ? snap.data() : null;
+      if (!current || current.completed || req.body && req.body.restart === true) {
+        state = { round: 0, answers: {}, rounds: [], completed: false, startedAt: Date.now(), updatedAt: Date.now() };
+        tx.set(ref, state);
+      } else state = current;
+    });
+    return res.json({ ok: true, state });
+  } catch (error) {
+    console.error("Guess game start failed:", error.message);
+    return sendError(res, 503, "guess_start_failed", "Не удалось открыть игру.");
+  }
+});
+app.post("/api/couple/game/guess/answer", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const round = Number(req.body && req.body.round);
+  const choice = String(req.body && req.body.choice || "");
+  if (!Number.isInteger(round) || round < 0 || round > 9 || !["0", "1"].includes(choice)) return sendError(res, 400, "invalid_guess_answer", "Выберите один из двух вариантов.");
+  try {
+    const ref = ctx.roomRef.collection("games").doc("guess");
+    let state;
+    await ctx.db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new Error("game_not_started");
+      const current = snap.data() || {};
+      if (current.completed || Number(current.round) !== round) throw new Error("round_closed");
+      const answers = Object.assign({}, current.answers || {});
+      if (answers[ctx.user.uid] !== undefined) throw new Error("already_answered");
+      answers[ctx.user.uid] = choice;
+      const next = Object.assign({}, current, { answers, updatedAt: Date.now() });
+      if (ctx.partnerUid && answers[ctx.partnerUid] !== undefined) {
+        const rounds = Array.isArray(current.rounds) ? current.rounds.slice() : [];
+        rounds.push({ round, answers: { [ctx.user.uid]: answers[ctx.user.uid], [ctx.partnerUid]: answers[ctx.partnerUid] } });
+        next.rounds = rounds;
+        next.round = round + 1;
+        next.answers = {};
+        next.completed = next.round >= 10;
+        if (next.completed) next.completedAt = Date.now();
+      }
+      tx.set(ref, next, { merge: true });
+      state = next;
+    });
+    return res.json({ ok: true, state });
+  } catch (error) {
+    const code = error.message === "already_answered" ? "already_answered" : error.message === "round_closed" ? "round_closed" : "guess_answer_failed";
+    return sendError(res, code === "guess_answer_failed" ? 503 : 409, code, "Не удалось сохранить ответ. Обновите игру.");
+  }
+});
+app.post("/api/couple/game/truth/choose", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const category = String(req.body && req.body.category || "");
+  const kind = String(req.body && req.body.kind || "");
+  const prompt = String(req.body && req.body.prompt || "").trim().slice(0, 500);
+  if (!["romance", "humor", "honesty", "adult"].includes(category) || !["truth", "action"].includes(kind) || !prompt) return sendError(res, 400, "invalid_truth_prompt", "Выберите категорию и задание.");
+  try {
+    const ref = ctx.roomRef.collection("games").doc("truth");
+    let state;
+    await ctx.db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      const current = snap.exists ? snap.data() : {};
+      const turnUid = current.currentTurnUid || ctx.members[0];
+      if (turnUid !== ctx.user.uid) throw new Error("not_your_turn");
+      if (current.pending) throw new Error("turn_pending");
+      state = Object.assign({}, current, {
+        currentTurnUid: turnUid, turnNo: Number(current.turnNo || 0) + 1,
+        pending: { category, kind, prompt, byUid: ctx.user.uid, createdAt: Date.now() },
+        history: Array.isArray(current.history) ? current.history : [], updatedAt: Date.now()
+      });
+      tx.set(ref, state, { merge: true });
+    });
+    return res.json({ ok: true, state });
+  } catch (error) {
+    const conflict = error.message === "not_your_turn" || error.message === "turn_pending";
+    return sendError(res, conflict ? 409 : 503, error.message || "truth_choose_failed", "Сейчас нельзя начать этот ход.");
+  }
+});
+app.post("/api/couple/game/truth/complete", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  try {
+    const ref = ctx.roomRef.collection("games").doc("truth");
+    let state;
+    await ctx.db.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw new Error("no_active_turn");
+      const current = snap.data() || {};
+      if (!current.pending || current.pending.byUid !== ctx.user.uid || current.currentTurnUid !== ctx.user.uid) throw new Error("not_your_turn");
+      const history = Array.isArray(current.history) ? current.history.slice(-49) : [];
+      history.push(Object.assign({}, current.pending, { completedAt: Date.now() }));
+      state = Object.assign({}, current, { history, pending: null, currentTurnUid: ctx.partnerUid || ctx.user.uid, updatedAt: Date.now() });
+      tx.set(ref, state, { merge: true });
+    });
+    return res.json({ ok: true, state });
+  } catch (error) {
+    const conflict = error.message === "not_your_turn" || error.message === "no_active_turn";
+    return sendError(res, conflict ? 409 : 503, error.message || "truth_complete_failed", "Не удалось завершить ход.");
+  }
+});
+
 app.post("/api/couple/notifications/read", async (req, res) => {
   if (!requireFirebaseReady(res)) return;
   const ctx = await coupleContext(req, res);
