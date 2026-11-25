@@ -1325,6 +1325,7 @@ function applyTelegramAccess(data){
   FULL=true;BLOCKS=[1,2,3,4,5,6,7];
   try{localStorage.setItem("kp_full_access","1")}catch(e){}
   updateOverview();chips();
+  if(ROOM&&MODE==="room")syncCoupleData(false);
 }
 function deviceAccessKey(){
   try{
