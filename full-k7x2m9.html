@@ -996,6 +996,23 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
   -webkit-text-decoration:none!important;
 }
 
+
+/* Партнёрская ссылка комнаты и улучшенная панель кода */
+#game .topbar{display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:10px!important;width:100%!important;margin:0 0 18px!important}
+#game .topbar>#back{flex:0 0 auto!important;min-width:116px!important;min-height:48px!important;padding:10px 18px!important;white-space:nowrap!important;text-decoration:none!important}
+#game #roombar{flex:1 1 220px!important;min-width:0!important;display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:9px!important;padding:10px 12px!important;border:1px solid #E7C9D5!important;border-radius:18px!important;background:linear-gradient(135deg,#FFFCFD,#F5E7ED)!important;box-shadow:0 5px 16px rgba(104,65,84,.07)!important;font-size:14px!important}
+#game #roombar b{display:inline-block!important;max-width:100%!important;overflow-wrap:anywhere!important;font-size:15px!important;letter-spacing:.035em!important;color:#70485B!important;user-select:all!important;-webkit-user-select:all!important}
+#game #roombar #rcopycode{flex:0 0 auto!important;min-height:44px!important;padding:10px 15px!important;border-radius:14px!important;white-space:normal!important;line-height:1.15!important;font-size:13px!important;font-weight:800!important;text-decoration:none!important;background:linear-gradient(145deg,#EACBD9,#D9AFC4)!important;color:#603D50!important;border:1px solid #D8B0C3!important;box-shadow:0 3px 9px rgba(119,70,94,.12)!important}
+#questionStage #allBlocks{min-width:150px!important;min-height:50px!important;padding:11px 19px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border-radius:999px!important;white-space:normal!important;line-height:1.2!important;text-decoration:none!important}
+#roomCodeModal .modal-card{width:min(92vw,440px)!important;padding:24px 20px!important}
+#roomCodeModal #roomCodeValue{display:block!important;width:100%!important;box-sizing:border-box!important;margin:16px 0!important;padding:18px 12px!important;border-radius:18px!important;background:linear-gradient(145deg,#FFF9FB,#F1DFE8)!important;border:1px solid #E5C3D2!important;color:#684356!important;font-size:clamp(21px,6vw,30px)!important;font-weight:850!important;letter-spacing:.045em!important;text-align:center!important;overflow-wrap:anywhere!important;user-select:all!important;-webkit-user-select:all!important}
+#roomCodeModal .modal-actions{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
+#roomCodeModal .modal-actions .btn{width:100%!important;min-height:52px!important;box-sizing:border-box!important;padding:13px 16px!important;white-space:normal!important;line-height:1.25!important;text-decoration:none!important}
+#roomCodeModal #roomCodeCopy{background:linear-gradient(135deg,#DDAFC3,#CB91AC)!important;color:#fff!important}
+#roomCodeModal #roomCodeInvite{background:linear-gradient(135deg,#F4E4EC,#E8D3E1)!important;color:#714B61!important}
+#roomCodeModal #roomCodeStatus{min-height:1.2em;overflow-wrap:anywhere}
+@media(max-width:390px){#game .topbar>#back{min-width:105px!important;padding:9px 13px!important}#game #roombar{flex-basis:100%!important}#game #roombar #rcopycode{font-size:12px!important;padding:9px 11px!important}}
+
 </style>
 </head>
 <body>
@@ -1426,8 +1443,11 @@ el("roomCodeCopy").onclick=copyRoomCode;
 async function inviteToRoom(){
   var code=el("roomCodeValue").textContent.trim();
   if(!code)return;
-  var site=location.href;
-  var message="Давай пройдём «Наедине» вместе ❤️\\nЯ уже создал(а) нашу комнату!\\n\\nКод комнаты: "+code+"\\n\\nОткрой сайт: "+site+"\\nНажми «Войти в комнату», введи этот код — и присоединяйся ко мне 💗";
+  var inviteUrl=new URL(location.href);
+  inviteUrl.searchParams.set("room",code);
+  inviteUrl.hash="";
+  var site=inviteUrl.href;
+  var message="Давай пройдём «Наедине» вместе ❤️\\nЯ уже создал(а) нашу комнату!\\n\\nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗\\n\\n"+site+"\\n\\nКод комнаты на всякий случай: "+code;
   var data={title:"Наедине — приглашение в нашу комнату",text:message,url:site};
   if(navigator.share){
     try{await navigator.share(data);el("roomCodeStatus").textContent="Приглашение готово к отправке 💗"}
@@ -1463,17 +1483,18 @@ el("rcreate").onclick=async function(){
     enterRoom(code);showRoomCode(code);roomMsg("")}
   catch(e){roomMsg(errText(e))}
 };
-el("rjoin").onclick=async function(){
-  saveName();var code=el("rcode").value.trim().toUpperCase().replace(/\s+/g,"");
-  if(!code){roomMsg("Введите код комнаты.");return}
-  roomMsg("Входим…");
+async function joinRoomByCode(rawCode){
+  saveName();var code=String(rawCode||"").trim().toUpperCase().replace(/\s+/g,"");
+  if(!code){roomMsg("Введите код комнаты.");return false}
+  roomMsg("Входим в вашу комнату…");
   try{await withTimeout(authP,12000,"auth-timeout");var ref=db.collection("rooms").doc(code),snap=await withTimeout(ref.get(),12000,"firestore-timeout");
-    if(!snap.exists){roomMsg("Комната не найдена. Проверьте код.");return}
+    if(!snap.exists){roomMsg("Комната не найдена. Проверьте приглашение.");return false}
     var m=snap.data().members||[];
-    if(m.indexOf(UID)<0){if(m.length>=2){roomMsg("В этой комнате уже двое.");return}await ref.update({members:[m[0],UID]})}
-    enterRoom(code);roomMsg("")}
-  catch(e){roomMsg(errText(e))}
-};
+    if(m.indexOf(UID)<0){if(m.length>=2){roomMsg("В этой комнате уже двое.");return false}await ref.update({members:[m[0],UID]})}
+    enterRoom(code);roomMsg("");return true}
+  catch(e){roomMsg(errText(e));return false}
+}
+el("rjoin").onclick=function(){joinRoomByCode(el("rcode").value)};
 el("pcont").onclick=async function(){
   saveName();var code=sget("room");
   if(!code){el("controw").style.display="none";roomMsg("Сохранённая комната не найдена.");return}
@@ -1906,6 +1927,13 @@ window.addEventListener("pagehide",function(){if(MODE==="room")writePresence(fal
    Сохранённую комнату проверяем отдельно: она открывается только по нажатию кнопки возврата. */
 authP.then(async function(){
   showLobby();
+  var incomingRoom="";
+  try{incomingRoom=new URLSearchParams(location.search).get("room")||""}catch(e){}
+  if(incomingRoom){
+    try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
+    var joined=await joinRoomByCode(incomingRoom);
+    if(joined)return;
+  }
   var savedRoom=sget("room");
   if(!savedRoom||!db)return;
   try{
