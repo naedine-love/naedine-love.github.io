@@ -1089,7 +1089,6 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
         <span class="menu-arrow">›</span>
       </button>
     </div>
-    <button class="btn menu-btn resume-local-btn" id="resumeLocal" style="display:none" type="button"><span class="menu-icon">↗</span><span class="menu-label"><b>Продолжить с того же места</b><small>Вернуться к последнему вопросу</small></span><span class="menu-arrow">›</span></button>
   </div>
   <p class="count" id="rmsg2" aria-live="polite"></p>
   <section class="instagram-card">
@@ -1585,11 +1584,13 @@ el("pcont").onclick=async function(){
     var snap=await withTimeout(db.collection("rooms").doc(code).get(),12000,"firestore-timeout");
     var members=snap.exists?(snap.data().members||[]):[];
     if(!snap.exists||members.indexOf(UID)<0){el("controw").style.display="none";roomMsg("Эта комната больше недоступна. Можно создать новую или войти по коду.");return}
-    enterRoom(code);roomMsg("");
+    enterRoom(code);
+    showBlockRoom();
+    window.scrollTo({top:0,behavior:"smooth"});
+    roomMsg("");
   }catch(e){roomMsg(errText(e))}
 };
 el("plocal").onclick=function(){saveName();startGame("local",false)};
-el("resumeLocal").onclick=function(){saveName();startGame("local",true)};
 el("back").onclick=function(){showLobby()};
 el("allBlocks").onclick=function(){chips();showBlockRoom();window.scrollTo({top:0,behavior:"smooth"})};
 el("rcopycode").onclick=function(){try{navigator.clipboard.writeText(ROOM.id).then(function(){roomMsg("Код скопирован. Отправьте его партнёру.")},function(){roomMsg("Не удалось скопировать. Выделите код вручную.")})}catch(e){roomMsg("Не удалось скопировать. Выделите код вручную.")}};
@@ -1599,7 +1600,6 @@ function showLobby(){
   el("lobby").style.display="";el("game").style.display="none";
   el("myname").value=sget("nm1");
   el("controw").style.display=(sget("room")&&db)?"":"none";
-  el("resumeLocal").style.display=readJourneyPosition("local")?"":"none";
   el("rmsg2").textContent="";
 }
 function journeyPositionKey(mode){
