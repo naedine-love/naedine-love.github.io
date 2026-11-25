@@ -1,0 +1,23 @@
+name: Validate Telegram backend
+
+on:
+  push:
+    branches: ["telegram-access-backend"]
+  pull_request:
+    branches: ["telegram-access-backend"]
+
+permissions:
+  contents: read
+
+jobs:
+  javascript:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check backend JavaScript
+        run: node --check server.js
