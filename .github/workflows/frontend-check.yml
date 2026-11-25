@@ -25,7 +25,7 @@ jobs:
           python - <<'PY'
           import pathlib, re, subprocess
           html = pathlib.Path("full-k7x2m9.html").read_text(encoding="utf-8")
-          blocks = re.findall(r'<script\\b(?![^>]*\\bsrc=)[^>]*>(.*?)</script>', html, flags=re.I | re.S)
+          blocks = re.findall(r'<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, flags=re.I | re.S)
           checked = 0
           for index, source in enumerate(blocks):
               if not source.strip():
