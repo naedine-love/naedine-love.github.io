@@ -607,6 +607,11 @@ app.post("/api/couple/sync", async (req, res) => {
     ]);
     const profiles = {};
     profileSnaps.forEach((snap, i) => { profiles[ctx.members[i]] = snap.exists ? (snap.data().name || "") : ""; });
+    const entitlementSnaps = ctx.members.length === 2
+      ? await Promise.all(ctx.members.map(uid => entitlementRef(uid).get()))
+      : [];
+    const canReadProtectedHistory = ctx.members.length === 2 &&
+      entitlementSnaps.every(snap => snap.exists && snap.data().active === true);
     const mineDaily = mineDailySnap.exists ? mineDailySnap.data() : null;
     const partnerDaily = partnerDailySnap && partnerDailySnap.exists ? partnerDailySnap.data() : null;
     const bothDaily = !!(mineDaily && partnerDaily);
@@ -646,6 +651,7 @@ app.post("/api/couple/sync", async (req, res) => {
     const history = [];
     for (let block = 1; block <= 7; block++) {
       const completed = doneMap[block] || {};
+      if (block > 2 && !canReadProtectedHistory) continue;
       if (!ctx.partnerUid || !completed[ctx.user.uid] || !completed[ctx.partnerUid]) continue;
       const [mine, partner] = await Promise.all([
         ctx.roomRef.collection("answers").doc(block + "_" + ctx.user.uid).get(),
