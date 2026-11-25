@@ -596,14 +596,15 @@ app.post("/api/couple/sync", async (req, res) => {
     const name = String(req.body && req.body.name || "").trim().slice(0, 40);
     if (name) await ctx.roomRef.collection("profiles").doc(ctx.user.uid).set({ uid: ctx.user.uid, name, updatedAt: now }, { merge: true });
     const profileRefs = ctx.members.map(uid => ctx.roomRef.collection("profiles").doc(uid));
-    const [profileSnaps, mineDailySnap, partnerDailySnap, ideasSnap, lettersSnap, activitiesSnap, doneSnap] = await Promise.all([
+    const [profileSnaps, mineDailySnap, partnerDailySnap, ideasSnap, lettersSnap, activitiesSnap, doneSnap, memoriesSnap] = await Promise.all([
       Promise.all(profileRefs.map(ref => ref.get())),
       ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.user.uid).get(),
       ctx.partnerUid ? ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.partnerUid).get() : Promise.resolve(null),
       ctx.roomRef.collection("ideas").limit(40).get(),
       ctx.roomRef.collection("letters").orderBy("createdAt", "desc").limit(100).get(),
       ctx.roomRef.collection("activities").orderBy("createdAt", "desc").limit(60).get(),
-      ctx.roomRef.collection("done").get()
+      ctx.roomRef.collection("done").get(),
+      ctx.roomRef.collection("coupleMemories").orderBy("createdAt", "desc").limit(100).get()
     ]);
     const [mineComplimentSnap, partnerComplimentSnap, datesSnap, guessSnap, truthSnap] = await Promise.all([
       ctx.roomRef.collection("compliments").doc(date + "_" + ctx.user.uid).get(),
@@ -685,6 +686,12 @@ app.post("/api/couple/sync", async (req, res) => {
         partnerAnswer: bothDaily ? String(partnerDaily.answer || "") : ""
       },
       ideas, letters, notifications, history,
+      coupleMemories: memoriesSnap.docs.map(doc => {
+        const d = doc.data() || {};
+        return { id: doc.id, title: String(d.title || ""), date: String(d.date || ""),
+          note: String(d.note || ""), favorite: !!d.favorite, createdBy: String(d.createdBy || ""),
+          createdAt: Number(d.createdAt || 0) };
+      }),
       compliment: {
         mine: mineComplimentSnap.exists ? String((mineComplimentSnap.data() || {}).text || "") : "",
         partnerSent: !!partnerComplimentSnap && partnerComplimentSnap.exists,
@@ -822,6 +829,29 @@ app.post("/api/couple/date/add", async (req, res) => {
     return sendError(res, 503, "couple_date_save_failed", "Не удалось добавить дату.");
   }
 });
+app.post("/api/couple/memory/add", async (req, res) => {
+  if (!requireFirebaseReady(res)) return;
+  const ctx = await coupleContext(req, res);
+  if (!ctx) return;
+  const title = String(req.body && req.body.title || "").trim().slice(0, 100);
+  const date = String(req.body && req.body.date || "");
+  const note = String(req.body && req.body.note || "").trim().slice(0, 1500);
+  const favorite = req.body && req.body.favorite === true;
+  if (!title || !validCoupleDate(date)) return sendError(res, 400, "invalid_couple_memory", "Укажите название и корректную дату воспоминания.");
+  try {
+    const id = crypto.randomUUID();
+    const createdAt = Date.now();
+    await ctx.roomRef.collection("coupleMemories").doc(id).set({
+      title, date, note, favorite, createdBy: ctx.user.uid, createdAt, updatedAt: createdAt
+    });
+    await addCoupleActivity(ctx, { type: "couple_memory", title: "В общей истории появилось новое воспоминание" });
+    return res.json({ ok: true, id, saved: true });
+  } catch (error) {
+    console.error("Couple memory save failed:", error.message);
+    return sendError(res, 503, "couple_memory_save_failed", "Не удалось сохранить воспоминание.");
+  }
+});
+
 app.post("/api/couple/game/guess/start", async (req, res) => {
   if (!requireFirebaseReady(res)) return;
   const ctx = await coupleContext(req, res);
