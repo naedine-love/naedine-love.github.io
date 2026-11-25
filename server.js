@@ -452,6 +452,40 @@ app.post("/api/telegram/access", async (req, res) => {
   const deviceKeyHash = /^[a-f0-9]{64}$/i.test(deviceKey) ? sha256(deviceKey) : null;
   try {
     const db = admin.firestore();
+    /* Full access can be shared only with the authenticated second member
+       of the same two-person room. Re-check the original subscriber live. */
+    const roomSnap = await db.collection("rooms").where("members", "array-contains", user.uid).limit(5).get();
+    let verifiedRoomPartner = null;
+    for (const roomDoc of roomSnap.docs) {
+      const members = Array.isArray(roomDoc.data().members) ? roomDoc.data().members : [];
+      if (members.length !== 2 || !members.includes(user.uid)) continue;
+      const partnerUid = members.find(uid => uid !== user.uid);
+      if (!partnerUid) continue;
+      const partnerEntSnap = await entitlementRef(partnerUid).get();
+      if (!partnerEntSnap.exists || partnerEntSnap.data().active !== true) continue;
+      const partnerTelegramSnap = await privateTelegramRef(partnerUid).get();
+      const partnerTelegramId = partnerTelegramSnap.exists ? String(partnerTelegramSnap.data().telegramId || "") : "";
+      if (!partnerTelegramId) continue;
+      if (await getMembership(partnerTelegramId)) {
+        verifiedRoomPartner = { uid: partnerUid, telegramId: partnerTelegramId, roomId: roomDoc.id };
+        break;
+      }
+    }
+    if (verifiedRoomPartner) {
+      await entitlementRef(user.uid).set({
+        active: true, channel: CHANNEL_ID,
+        sharedFromRoom: verifiedRoomPartner.roomId,
+        sharedFromUid: verifiedRoomPartner.uid,
+        checkedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      return res.json({ ok: true, access: "couple", blocks: questions });
+    }
+    /* A previous couple grant is revoked when no current subscribed member
+       remains in the linked room. */
+    const previousEntitlement = await entitlementRef(user.uid).get();
+    if (previousEntitlement.exists && previousEntitlement.data().sharedFromRoom) {
+      await entitlementRef(user.uid).delete().catch(() => {});
+    }
     if (deviceKeyHash) {
       const deviceRef = db.collection("deviceEntitlements").doc(deviceKeyHash);
       const deviceSnap = await deviceRef.get();
