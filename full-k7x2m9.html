@@ -1857,10 +1857,10 @@ function renderResults(){
     var title=TITLES[b.n].replace(/^\\d+\\.\\s*/,"");
     var toggle=document.createElement("button");toggle.type="button";toggle.className="results-block-toggle";
     toggle.setAttribute("aria-expanded","false");toggle.textContent=title+" · "+b.items.length+" ответов  ＋";
-    var content=document.createElement("div");content.className="results-block-content";content.hidden=true;
+    var content=document.createElement("div");content.className="results-block-content";content.hidden=true;content.style.display="none";
     toggle.addEventListener("click",function(){
       var expanded=toggle.getAttribute("aria-expanded")==="true";
-      toggle.setAttribute("aria-expanded",expanded?"false":"true");content.hidden=expanded;
+      toggle.setAttribute("aria-expanded",expanded?"false":"true");content.hidden=expanded;content.style.display=expanded?"none":"block";
       toggle.textContent=title+" · "+b.items.length+" ответов  "+(expanded?"＋":"−");
     });
     b.items.forEach(function(it){
