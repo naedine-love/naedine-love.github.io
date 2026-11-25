@@ -1126,13 +1126,31 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
     <div class="chips" id="chips" role="group" aria-label="Блоки"></div>
     <p class="block-room-foot">Не обязательно проходить всё сразу. Возвращайтесь к любому блоку, когда захотите ♡</p>
     <section class="couple-tools" id="coupleTools" style="display:none">
-      <div class="couple-tools-heading"><span class="eyebrow">НЕ ТОЛЬКО ВОПРОСЫ</span><h3>Ваши маленькие традиции</h3><p>Новые поводы быть ближе — каждый день</p></div>
-      <div class="couple-tool-grid">
-        <button type="button" class="couple-tool daily-tool" id="dailyOpen"><span>☀</span><b>Вопрос дня</b><small>Один вопрос для двоих</small></button>
-        <button type="button" class="couple-tool history-tool" id="historyOpen"><span>♡</span><b>История пары</b><small>Ваши ответы и совпадения</small></button>
-        <button type="button" class="couple-tool ideas-tool" id="ideasOpen"><span>✦</span><b>Идеи для свиданий</b><small>Маленькие планы вдвоём</small></button>
-        <button type="button" class="couple-tool letters-tool" id="lettersOpen"><span>✉</span><b>Тайные послания</b><small>Письма к особому дню</small></button>
-        <button type="button" class="couple-tool notices-tool" id="notificationsOpen"><span>♧</span><b>Уведомления <i id="notificationBadge" hidden>0</i></b><small>Что нового у вас двоих</small></button>
+      <div class="couple-tools-heading"><span class="eyebrow">ВАШЕ ОБЩЕЕ ПРОСТРАНСТВО</span><h3>Пространство пары <i id="notificationBadge" hidden>0</i></h3><p>Небольшие поводы быть ближе каждый день</p></div>
+      <div class="couple-category">
+        <button type="button" class="couple-category-toggle" data-couple-category="talk"><span>♡</span><b>Общение</b><small>Вопрос дня · Комплимент · Письма</small><i>⌄</i></button>
+        <div class="couple-category-links" data-couple-category-content="talk" hidden>
+          <button type="button" data-couple-open="daily">☀ Вопрос дня</button>
+          <button type="button" data-couple-open="compliment">💌 Комплимент дня</button>
+          <button type="button" data-couple-open="letters">✉ Тайные послания</button>
+          <button type="button" data-couple-open="notifications">♧ Уведомления</button>
+        </div>
+      </div>
+      <div class="couple-category">
+        <button type="button" class="couple-category-toggle" data-couple-category="games"><span>✦</span><b>Игры для двоих</b><small>Угадай меня · Правда или действие · Свидание</small><i>⌄</i></button>
+        <div class="couple-category-links" data-couple-category-content="games" hidden>
+          <button type="button" data-couple-open="guess">🧠 Насколько хорошо ты меня знаешь?</button>
+          <button type="button" data-couple-open="truth">🔥 Правда или действие</button>
+          <button type="button" data-couple-open="ideas">🌹 Случайное свидание</button>
+        </div>
+      </div>
+      <div class="couple-category">
+        <button type="button" class="couple-category-toggle" data-couple-category="life"><span>♡</span><b>Наша жизнь</b><small>История · Планы · Памятные даты</small><i>⌄</i></button>
+        <div class="couple-category-links" data-couple-category-content="life" hidden>
+          <button type="button" data-couple-open="history">📖 История пары</button>
+          <button type="button" data-couple-open="ideas">✦ Наши идеи</button>
+          <button type="button" data-couple-open="dates">📅 Наши даты</button>
+        </div>
       </div>
       <section class="couple-panel" id="couplePanel" hidden>
         <div class="couple-panel-head"><h3 id="couplePanelTitle">Ваше пространство</h3><button type="button" id="couplePanelClose" aria-label="Закрыть">×</button></div>
@@ -1276,12 +1294,31 @@ var DATE_IDEAS=[
 {id:"kindness-day",title:"День маленьких сюрпризов",desc:"В течение дня оставляйте друг другу приятные записки и знаки внимания"},
 {id:"future-letter",title:"Письмо в будущее",desc:"Напишите, о чём мечтаете как пара, и договоритесь перечитать через год"}
 ];
+var GUESS_QUESTIONS=[
+{q:"Какой отдых я выберу?",a:["Море и пляж","Горы и природа"]},
+{q:"Как я предпочту провести свободный вечер?",a:["Дома в уюте","Гулять и куда-нибудь выбраться"]},
+{q:"Что меня скорее порадует?",a:["Неожиданный подарок","Время только вдвоём"]},
+{q:"Какой отпуск мне ближе?",a:["Спланированный заранее","Спонтанное приключение"]},
+{q:"Что я выберу на ужин?",a:["Попробовать новое место","Любимое проверенное блюдо"]},
+{q:"Какой подарок мне приятнее?",a:["Практичный и полезный","Личный и сделанный с душой"]},
+{q:"Что я выберу в выходной?",a:["Активность и впечатления","Отдых и спокойствие"]},
+{q:"Как я чаще проявляю любовь?",a:["Слова и признания","Забота и поступки"]},
+{q:"Какое свидание мне понравится больше?",a:["Красивый вечер вне дома","Домашний вечер вдвоём"]},
+{q:"Что я выберу для совместного приключения?",a:["Путешествие в новое место","Новый опыт рядом с домом"]}
+];
+var TRUTH_PROMPTS={
+romance:{truth:["Какой мой поступок заставляет тебя чувствовать себя любимым(ой)?","Какое наше свидание ты хотел(а) бы повторить?","Что во мне до сих пор вызывает у тебя улыбку?"],action:["Обними партнёра и скажи три вещи, за которые ты его ценишь.","Устройте минуту медленного танца под любимую песню.","Напиши партнёру короткое признание, глядя ему в глаза."]},
+humor:{truth:["Какой самый смешной момент у нас был?","Какую мою привычку ты иногда копируешь?","Кто из нас смешнее ведёт себя сонным?"],action:["Изобрази, как партнёр собирается на свидание.","Придумай смешное прозвище вашей паре на сегодня.","30 секунд говори только комплиментами с серьёзным лицом."]},
+honesty:{truth:["О чём тебе бывает трудно попросить меня?","Что помогает тебе чувствовать себя услышанным(ой)?","Какую нашу привычку ты хотел(а) бы изменить к лучшему?"],action:["Расскажи о важной мечте, которую ещё не обсуждали.","Назови одну вещь, в которой хочешь стать внимательнее к партнёру.","Скажите друг другу по одному желанию на ближайший месяц."]},
+adult:{truth:["Что помогает тебе расслабиться и почувствовать близость?","Какой романтический момент ты хотел(а) бы повторить?","О чём тебе хотелось бы поговорить откровеннее?"],action:["Поцелуй партнёра так, как давно хотел(а).","Шепни партнёру на ухо одно нежное желание.","Устройте приватный романтический танец."]}
+};
 var B=[null,["Что в моём характере тебя удивило, когда мы только познакомились?","Какую мою маленькую привычку ты находишь милой?","Что помогает мне восстановиться после тяжёлого дня?","Что мне нужно, когда я расстроен(а)? Как ты это понимаешь?","В какие моменты я больше всего становлюсь самим(ой) собой?","Что меня тревожит, но я редко об этом говорю?","Какой страх я ношу в себе с детства?","Что в наших отношениях для меня самое ценное?","Какое наше воспоминание я вспоминаю чаще всего?","Какая мелочь делает мой день лучше?","Какой наш маленький ритуал (сообщение, звонок, привычка) для меня самый важный?","Каким ты запомнил(а) наш первый разговор? Что тебя тогда зацепило?","Какой момент из моего детства сильнее всего меня сформировал?","Что ты хотел(а) бы, чтобы я лучше понимал(а) в тебе?","Что нового ты узнал(а) обо мне за время наших отношений, чего не ожидал(а)?"],["Какое блюдо я могу есть каждую неделю, и оно мне не надоест?","Какой фильм или сериал я пересматривал(а) чаще всего?","Какая песня сразу поднимает мне настроение?","Что я закажу в любимом кафе, если можно выбрать всё что угодно?","Что из того, что я люблю, тебе до сих пор непонятно? Спроси меня об этом.","Какой подарок обрадовал бы меня больше всего? А какой обрадовал бы тебя? Сравним.","Куда я бы поехал(а) в идеальный отпуск? А ты? Куда поедем вместе?","Какую мою странную привычку ты замечаешь, но ни разу не обсуждал(а)?","Что из моего детства ты хотел(а) бы увидеть своими глазами: фото, любимое место, игрушку?","Каким должен быть наш идеальный выходной? Где мы совпали, а где нет?","Что бы тебе хотелось приготовить или попробовать вместе со мной в первый раз?","Расскажи то, что я о тебе точно не знаю, но, по-твоему, должен(на) узнать.","Какое занятие нам стоит попробовать вместе, но мы всё откладывали?","Какое моё качество ты полюбил(а) не сразу, а со временем?","Назовите друг про друга любимый цвет, еду и фильм, а потом сверьтесь. Кто был точнее?"]];
 var INTRO="Этот блок для взрослых пар. Отвечайте честно и без осуждения.", BRIDGE="Вы уже узнали друг друга лучше. Дальше пойдёт самое интересное: быт, мечты, близость и то, что вы хотите изменить вместе.";
 var FB_CFG={apiKey:"AIzaSyCnLhxurSJ8s28GWYcjSjNe_pkgkiwTBrw",authDomain:"koloda-app.firebaseapp.com",projectId:"koloda-app",storageBucket:"koloda-app.firebasestorage.app",messagingSenderId:"886064865472",appId:"1:886064865472:web:b1f53db07c5e22ad744d25"};
 var blk=1, list=[], i=0, MODE=null, MEM={}, hideP={1:false,2:false};
 var db=null, UID=null, ROOM=null, DN={}, REV={}, FETCH={}, PRG={}, PRES={}, unsubs=[], finArmed=false, progressTimers={}, presenceTimer=null, typingTimer=null, isTyping=false;
 var COUPLE_STATE=null, coupleSyncTimer=null, couplePanelOpen="", coupleSyncBusy=false, coupleSyncAgain=false;
+var coupleSurpriseIdeaId="";
 var el=function(id){return document.getElementById(id)};
 function storageKey(k){k=String(k);return k.charAt(0)==="R"&&ROOM&&ROOM.id?"kp_R_"+encodeURIComponent(ROOM.id)+"_"+k.slice(1):"kp_"+k}
 function sget(k){var key=storageKey(k);try{var v=localStorage.getItem(key);if(v!==null)return v}catch(e){}return MEM[key]||""}
@@ -2004,7 +2041,7 @@ function renderCoupleFeatures(){
 function openCouplePanel(kind){
   if(MODE!=="room"||!ROOM)return;
   couplePanelOpen=kind;el("couplePanel").hidden=false;
-  el("couplePanelTitle").textContent=({daily:"Вопрос дня",history:"История вашей пары",ideas:"Идеи для свиданий",letters:"Тайные послания",notifications:"Уведомления"}[kind]||"Ваше пространство");
+  el("couplePanelTitle").textContent=({daily:"Вопрос дня",history:"История вашей пары",ideas:"Идеи для двоих",letters:"Тайные послания",notifications:"Уведомления",compliment:"Комплимент дня",guess:"Насколько хорошо ты меня знаешь?",truth:"Правда или действие",dates:"Наши даты"}[kind]||"Ваше пространство");
   el("couplePanelContent").innerHTML='<p class="couple-loading">Загружаем ваше пространство…</p>';
   if(COUPLE_STATE)renderCouplePanel();else syncCoupleData(false);
   el("couplePanel").scrollIntoView({behavior:"smooth",block:"start"});
@@ -2018,6 +2055,10 @@ function renderCouplePanel(){
   if(couplePanelOpen==="ideas")html=renderIdeasPanel();
   if(couplePanelOpen==="letters")html=renderLettersPanel();
   if(couplePanelOpen==="notifications")html=renderNotificationsPanel();
+  if(couplePanelOpen==="compliment")html=renderComplimentPanel();
+  if(couplePanelOpen==="guess")html=renderGuessPanel();
+  if(couplePanelOpen==="truth")html=renderTruthPanel();
+  if(couplePanelOpen==="dates")html=renderDatesPanel();
   el("couplePanelContent").innerHTML=html;
 }
 function renderDailyPanel(){
@@ -2065,10 +2106,11 @@ function renderHistoryPanel(){
   return html;
 }
 function renderIdeasPanel(){
-  var state=COUPLE_STATE,progress=state.ideas||[];
-  return '<p class="couple-panel-lead">Отмечайте идеи, которые уже осуществили. Когда галочки поставите оба, идея станет вашим общим воспоминанием.</p><div class="date-idea-list">'+DATE_IDEAS.map(function(idea){
-    var item=progress.find(function(x){return x.id===idea.id})||{doneBy:[]},mine=item.doneBy.includes(state.uid),partner=state.partnerUid&&item.doneBy.includes(state.partnerUid),done=mine&&partner;
-    return '<article class="date-idea'+(done?' completed':'')+'"><div><b>'+coupleEscape(idea.title)+'</b><p>'+coupleEscape(idea.desc)+'</p><small>'+(done?'Сделали вместе ♡':(mine?'Вы отметили · ':'' )+(partner?'Партнёр отметил':'Пока не отмечено'))+'</small></div><button type="button" data-idea-toggle="'+idea.id+'" class="idea-toggle'+(mine?' selected':'')+'">'+(mine?'Отменить':'Мы сделали')+'</button></article>';
+  var state=COUPLE_STATE,progress=state.ideas||[],surprise=DATE_IDEAS.find(function(x){return x.id===coupleSurpriseIdeaId});
+  var surpriseHtml=surprise?'<div class="daily-question-card"><span class="eyebrow">ВАША ИДЕЯ-СЮРПРИЗ</span><p>'+coupleEscape(surprise.title)+'</p><small>'+coupleEscape(surprise.desc)+'</small></div>':'';
+  return '<p class="couple-panel-lead">Получите случайную идею или сохраняйте то, что хотите попробовать вместе.</p><button class="btn main" type="button" id="surpriseDateIdea">Удиви нас ✦</button>'+surpriseHtml+'<div class="date-idea-list">'+DATE_IDEAS.map(function(idea){
+    var item=progress.find(function(x){return x.id===idea.id})||{doneBy:[],wantBy:[]},mineDone=item.doneBy.includes(state.uid),partnerDone=state.partnerUid&&item.doneBy.includes(state.partnerUid),done=mineDone&&partnerDone,mineWant=(item.wantBy||[]).includes(state.uid),partnerWant=state.partnerUid&&(item.wantBy||[]).includes(state.partnerUid);
+    return '<article class="date-idea'+(done?' completed':'')+'"><div><b>'+coupleEscape(idea.title)+'</b><p>'+coupleEscape(idea.desc)+'</p><small>'+(done?'Сделали вместе ♡':(mineWant&&partnerWant?'Оба хотят попробовать':mineWant?'Вы хотите · ':partnerWant?'Партнёр хочет · ':'Пока без отметок'))+'</small><div class="idea-actions"><button type="button" data-idea-want="'+idea.id+'" class="idea-toggle'+(mineWant?' selected':'')+'">'+(mineWant?'Не хочу':'Хочу попробовать')+'</button><button type="button" data-idea-toggle="'+idea.id+'" class="idea-toggle'+(mineDone?' selected':'')+'">'+(mineDone?'Отменить':'Сделали')+'</button></div></div></article>';
   }).join("")+'</div><p class="couple-status" id="coupleActionStatus"></p>';
 }
 function defaultLetterDateTime(){
@@ -2083,6 +2125,45 @@ function renderLettersPanel(){
   }).join(""):'<p class="couple-empty">Здесь будут письма, которые вы отправите друг другу в будущее.</p>';
   if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Сначала пригласите вторую половинку в комнату, а потом сможете отправлять тайные послания.</p>';
   return '<p class="couple-panel-lead">Напишите что-то тёплое и выберите момент, когда партнёр сможет это прочитать.</p><form id="secretLetterForm" class="couple-form"><label for="secretLetterBody">Текст послания</label><textarea id="secretLetterBody" maxlength="3000" rows="4" required placeholder="Оставьте несколько важных слов…"></textarea><label for="secretLetterDate">Когда открыть</label><input id="secretLetterDate" type="datetime-local" min="'+new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16)+'" value="'+defaultLetterDateTime()+'" required><button class="btn main" type="submit">Запечатать послание 💌</button><p class="couple-status" id="coupleActionStatus"></p></form><h4 class="couple-subheading">Ваши письма</h4>'+list;
+}
+function renderComplimentPanel(){
+  var c=COUPLE_STATE.compliment||{};
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Комплименты станут общими, когда в комнату присоединится вторая половинка.</p>';
+  var mine=c.mine?'<div class="daily-reveal"><b>Ваш комплимент отправлен ♡</b><p>'+coupleEscape(c.mine)+'</p></div>':'<form id="complimentForm" class="couple-form"><label for="complimentText">Что тебе особенно нравится в партнёре?</label><textarea id="complimentText" rows="3" maxlength="500" required placeholder="Напиши что-нибудь от сердца…"></textarea><button class="btn main" type="submit">Отправить комплимент</button><p class="couple-status" id="coupleActionStatus"></p></form>';
+  var partner=c.bothSent?'<div class="daily-reveal"><b>Комплимент от партнёра</b><p>'+coupleEscape(c.partnerText)+'</p></div>':(c.partnerSent?'<p class="couple-wait">Партнёр уже отправил комплимент. Ваш откроется, когда вы тоже отправите свой.</p>':'<p class="couple-wait">Комплимент партнёра пока скрыт. Вы увидите его, когда отправите оба.</p>');
+  return '<p class="couple-panel-lead">Каждый день оставляйте друг другу по одному тёплому сообщению. Откроются одновременно.</p>'+mine+partner;
+}
+function renderGuessPanel(){
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
+  var g=COUPLE_STATE.games&&COUPLE_STATE.games.guess;
+  if(!g)return '<p class="couple-panel-lead">Десять вопросов. Каждый выбирает ответ независимо, а результаты открываются только после выбора обоих.</p><button class="btn main" type="button" id="startGuessGame">Начать игру ♡</button>';
+  if(g.completed){
+    var rounds=g.rounds||[],score=rounds.filter(function(r){return r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid]}).length;
+    var details=rounds.map(function(r){var q=GUESS_QUESTIONS[r.round],same=r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid];return '<p class="guess-result-item"><b>'+(same?'♡ Совпали':'✦ По-разному')+'</b><span>'+coupleEscape(q.q)+'</span></p>'}).join('');
+    return '<div class="history-summary"><b>Игра завершена!</b><span>'+score+' совпадений из 10</span></div><div class="guess-results">'+details+'</div><button class="btn main" type="button" id="restartGuessGame">Сыграть ещё раз</button>';
+  }
+  var index=Math.max(0,Math.min(9,Number(g.round)||0)),q=GUESS_QUESTIONS[index];
+  var progress='<p class="couple-panel-lead">Вопрос '+(index+1)+' из 10</p>';
+  if(g.answeredByMe)return progress+'<div class="couple-wait">Ваш ответ сохранён. Ждём выбор партнёра — ответы пока скрыты ♡</div>';
+  return progress+'<div class="daily-question-card"><p>'+coupleEscape(q.q)+'</p></div><div class="guess-options">'+q.a.map(function(a,i){return '<button type="button" data-guess-choice="'+i+'">'+coupleEscape(a)+'</button>'}).join('')+'</div><p class="couple-status" id="coupleActionStatus"></p>';
+}
+function renderTruthPanel(){
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
+  var g=COUPLE_STATE.games&&COUPLE_STATE.games.truth||{},pending=g.pending,uid=COUPLE_STATE.uid,turnUid=g.currentTurnUid||COUPLE_STATE.members[0],mine=turnUid===uid;
+  var history=(g.history||[]).slice(-3).reverse().map(function(item){return '<p class="truth-history-item"><small>'+coupleEscape(({romance:"Романтика",humor:"Юмор",honesty:"Откровенность",adult:"18+"}[item.category]||"Игра"))+' · '+(item.kind==="truth"?"Правда":"Действие")+'</small>'+coupleEscape(item.prompt)+'</p>'}).join('');
+  if(pending)return '<div class="daily-question-card"><span class="eyebrow">'+coupleEscape(({romance:"РОМАНТИКА",humor:"ЮМОР",honesty:"ОТКРОВЕННОСТЬ",adult:"18+"}[pending.category]||"ВАШ ХОД"))+' · '+(pending.kind==="truth"?"ПРАВДА":"ДЕЙСТВИЕ")+'</span><p>'+coupleEscape(pending.prompt)+'</p></div>'+(pending.byUid===uid?'<p class="couple-panel-lead">Ваш ход. Можно выполнить задание или спокойно пропустить его.</p><div class="truth-turn-actions"><button class="btn main" type="button" id="completeTruthTurn">Выполнено · передать ход</button><button class="btn secondary" type="button" id="skipTruthTurn">Пропустить</button></div>':'<p class="couple-wait">Партнёр выбрал задание. После его хода очередь перейдёт к вам.</p>')+history;
+  if(!mine)return '<div class="couple-wait">Сейчас очередь партнёра. Скоро он выберет правду или действие для вас обоих.</div>'+history;
+  var cats=[["romance","♡ Романтика"],["humor","☀ Юмор"],["honesty","✦ Откровенность"],["adult","🔥 18+"]].map(function(c){return '<div class="truth-category"><b>'+c[1]+'</b><div><button type="button" data-truth-choice="'+c[0]+'|truth">Правда</button><button type="button" data-truth-choice="'+c[0]+'|action">Действие</button></div></div>'}).join('');
+  return '<p class="couple-panel-lead">Ваш ход. Выберите настроение и решите: правда или действие. Любое задание можно пропустить.</p>'+cats+history;
+}
+function renderDatesPanel(){
+  var dates=COUPLE_STATE.coupleDates||[],today=coupleDateKey();
+  var list=dates.length?dates.map(function(d){
+    var days=Math.ceil((Date.parse(d.date+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);
+    var when=days<0?"Уже было":days===0?"Сегодня":days===1?"Завтра":"Через "+days+" дн.";
+    return '<article class="couple-date-item"><div><b>'+coupleEscape(d.title)+'</b><small>'+coupleEscape(coupleFormatDate(Date.parse(d.date+"T00:00:00Z")))+' · '+when+'</small>'+(d.note?'<p>'+coupleEscape(d.note)+'</p>':'')+'</div></article>';
+  }).join(''):'<p class="couple-empty">Добавьте ваши первые важные даты — они будут видны обоим.</p>';
+  return '<form id="coupleDateForm" class="couple-form"><label for="coupleDateTitle">Что отмечаем?</label><input id="coupleDateTitle" maxlength="80" required placeholder="Например, день знакомства"><label for="coupleDateValue">Дата</label><input id="coupleDateValue" type="date" required><label for="coupleDateNote">Заметка (необязательно)</label><input id="coupleDateNote" maxlength="300" placeholder="Маленькое воспоминание…"><button class="btn main" type="submit">Добавить дату</button><p class="couple-status" id="coupleActionStatus"></p></form><h4 class="couple-subheading">Ваш календарь</h4>'+list;
 }
 function renderNotificationsPanel(){
   var notifications=COUPLE_STATE.notifications||[],unread=notifications.filter(function(n){return !n.read}).length;
@@ -2111,11 +2192,52 @@ async function enableCoupleNotifications(){
     else roomMsg("Разрешите уведомления для сайта в настройках браузера.");
   }catch(e){roomMsg("Не удалось включить уведомления в этом браузере.")}
 }
-async function toggleDateIdea(ideaId,button){
+async function toggleDateIdea(ideaId,button,mode){
   button.disabled=true;
-  try{await coupleApi("/api/couple/idea/toggle",{roomCode:ROOM.id,ideaId:ideaId});await syncCoupleData(false)}
+  try{await coupleApi("/api/couple/idea/toggle",{roomCode:ROOM.id,ideaId:ideaId,mode:mode||"done"});await syncCoupleData(false)}
   catch(e){roomMsg(e.message||"Не удалось обновить идею")}
   finally{button.disabled=false}
+}
+async function sendCompliment(form){
+  var text=el("complimentText").value.trim(),status=el("coupleActionStatus"),button=form.querySelector('button[type="submit"]');
+  if(!text){status.textContent="Напишите несколько тёплых слов.";return}
+  button.disabled=true;
+  try{await coupleApi("/api/couple/compliment/send",{roomCode:ROOM.id,date:COUPLE_STATE.date,text:text});await syncCoupleData(false)}
+  catch(e){status.textContent=e.message||"Не удалось отправить комплимент."}
+  finally{button.disabled=false}
+}
+async function addCoupleDate(form){
+  var title=el("coupleDateTitle").value.trim(),date=el("coupleDateValue").value,note=el("coupleDateNote").value.trim(),status=el("coupleActionStatus"),button=form.querySelector('button[type="submit"]');
+  if(!title||!date){status.textContent="Укажите название и дату.";return}
+  button.disabled=true;
+  try{await coupleApi("/api/couple/date/add",{roomCode:ROOM.id,title:title,date:date,note:note});await syncCoupleData(false)}
+  catch(e){status.textContent=e.message||"Не удалось добавить дату."}
+  finally{button.disabled=false}
+}
+async function startGuessGame(restart){
+  var button=el(restart?"restartGuessGame":"startGuessGame");if(button)button.disabled=true;
+  try{await coupleApi("/api/couple/game/guess/start",{roomCode:ROOM.id,restart:!!restart});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось начать игру.")}
+  finally{if(button)button.disabled=false}
+}
+async function answerGuess(choice,button){
+  if(button)button.disabled=true;
+  try{await coupleApi("/api/couple/game/guess/answer",{roomCode:ROOM.id,round:Number(COUPLE_STATE.games.guess.round),choice:String(choice)});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось сохранить ответ.")}
+  finally{if(button)button.disabled=false}
+}
+async function chooseTruthPrompt(category,kind){
+  var options=(TRUTH_PROMPTS[category]||{})[kind]||[];
+  if(!options.length)return;
+  var prompt=options[Math.floor(Math.random()*options.length)];
+  try{await coupleApi("/api/couple/game/truth/choose",{roomCode:ROOM.id,category:category,kind:kind,prompt:prompt});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Сейчас не ваш ход.")}
+}
+async function completeTruthTurn(button){
+  if(button)button.disabled=true;
+  try{await coupleApi("/api/couple/game/truth/complete",{roomCode:ROOM.id});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось передать ход.")}
+  finally{if(button)button.disabled=false}
 }
 async function saveDailyAnswer(form){
   var answer=el("dailyAnswer").value.trim(),question=dailyQuestionFor(COUPLE_STATE.date);
@@ -2144,22 +2266,43 @@ async function markCoupleNotificationRead(id,button){
   catch(e){roomMsg(e.message||"Не удалось обновить уведомление")}
   finally{button.disabled=false}
 }
-el("dailyOpen").onclick=function(){openCouplePanel("daily")};
-el("historyOpen").onclick=function(){openCouplePanel("history")};
-el("ideasOpen").onclick=function(){openCouplePanel("ideas")};
-el("lettersOpen").onclick=function(){openCouplePanel("letters")};
-el("notificationsOpen").onclick=function(){openCouplePanel("notifications")};
+el("coupleTools").addEventListener("click",function(e){
+  var category=e.target.closest?e.target.closest("[data-couple-category]"):null;
+  if(category){
+    var name=category.getAttribute("data-couple-category"),content=el("coupleTools").querySelector('[data-couple-category-content="'+name+'"]');
+    var wasOpen=!content.hidden;
+    el("coupleTools").querySelectorAll("[data-couple-category-content]").forEach(function(x){x.hidden=true});
+    el("coupleTools").querySelectorAll(".couple-category-toggle").forEach(function(x){x.classList.remove("active")});
+    if(!wasOpen){content.hidden=false;category.classList.add("active")}
+    return;
+  }
+  var open=e.target.closest?e.target.closest("[data-couple-open]"):null;
+  if(open){openCouplePanel(open.getAttribute("data-couple-open"));return}
+});
 el("couplePanelClose").onclick=closeCouplePanel;
 el("couplePanelContent").addEventListener("submit",function(e){
   if(e.target.id==="dailyAnswerForm"){e.preventDefault();saveDailyAnswer(e.target)}
   if(e.target.id==="secretLetterForm"){e.preventDefault();sendSecretLetter(e.target)}
+  if(e.target.id==="complimentForm"){e.preventDefault();sendCompliment(e.target)}
+  if(e.target.id==="coupleDateForm"){e.preventDefault();addCoupleDate(e.target)}
 });
 el("couplePanelContent").addEventListener("click",function(e){
   var idea=e.target.closest?e.target.closest("[data-idea-toggle]"):null;
-  if(idea){toggleDateIdea(idea.getAttribute("data-idea-toggle"),idea);return}
+  if(idea){toggleDateIdea(idea.getAttribute("data-idea-toggle"),idea,"done");return}
+  var want=e.target.closest?e.target.closest("[data-idea-want]"):null;
+  if(want){toggleDateIdea(want.getAttribute("data-idea-want"),want,"want");return}
   var read=e.target.closest?e.target.closest("[data-notification-read]"):null;
   if(read){markCoupleNotificationRead(read.getAttribute("data-notification-read"),read);return}
+  var guess=e.target.closest?e.target.closest("[data-guess-choice]"):null;
+  if(guess){answerGuess(guess.getAttribute("data-guess-choice"),guess);return}
+  var truth=e.target.closest?e.target.closest("[data-truth-choice]"):null;
+  if(truth){var bits=truth.getAttribute("data-truth-choice").split("|");chooseTruthPrompt(bits[0],bits[1]);return}
   if(e.target&&e.target.id==="enableCoupleNotifications")enableCoupleNotifications();
+  if(e.target&&e.target.id==="startGuessGame")startGuessGame(false);
+  if(e.target&&e.target.id==="restartGuessGame")startGuessGame(true);
+  if(e.target&&e.target.id==="completeTruthTurn")completeTruthTurn(e.target);
+  if(e.target&&e.target.id==="skipTruthTurn")completeTruthTurn(e.target);
+  if(e.target&&e.target.id==="surpriseDateIdea"){coupleSurpriseIdeaId=DATE_IDEAS[Math.floor(Math.random()*DATE_IDEAS.length)].id;renderCouplePanel()}
 });
 
 /* ---------- результаты ---------- */
@@ -2414,5 +2557,51 @@ authP.then(async function(){
 .couple-notification small{display:block;margin-top:3px;color:#9A8790;font-size:.68rem}
 .couple-notification.read{opacity:.58}
 @media(max-width:360px){.couple-tools{padding:14px}.couple-tool{min-height:105px;padding:11px}.date-idea{align-items:flex-start;flex-direction:column}.idea-toggle{max-width:none;width:100%}.history-summary{align-items:flex-start;flex-direction:column}}
+
+
+/* Compact couple space */
+.couple-tools{margin:16px 0 6px;padding:14px;border:1px solid #EAD9DF;border-radius:20px;background:linear-gradient(145deg,#FFFCFB 0%,#F8F0F3 100%);box-shadow:0 5px 18px rgba(126,83,102,.045)}
+.couple-tools-heading{margin:0 0 10px}
+.couple-tools-heading h3{display:flex;align-items:center;gap:7px;margin:3px 0 2px;font-size:1.08rem}
+.couple-tools-heading p{margin:0;font-size:.76rem}
+#notificationBadge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:50px;background:#C66E86;color:#fff;font:700 .65rem sans-serif}
+#notificationBadge[hidden]{display:none}
+.couple-category{margin-top:8px;border:1px solid #EADDE2;border-radius:14px;background:rgba(255,255,255,.72);overflow:hidden}
+.couple-category-toggle{display:grid;grid-template-columns:28px minmax(0,1fr) 18px;grid-template-rows:auto auto;align-items:center;gap:1px 8px;width:100%;padding:11px 12px;border:0;background:transparent;color:#684F5E;text-align:left}
+.couple-category-toggle>span{grid-row:1/3;font-size:1.1rem;color:#B87991}
+.couple-category-toggle>b{font-size:.86rem;line-height:1.2}
+.couple-category-toggle>small{font-size:.68rem;color:#95838D;line-height:1.3}
+.couple-category-toggle>i{grid-column:3;grid-row:1/3;font-style:normal;color:#A17C8C;transition:transform .18s}
+.couple-category-toggle.active>i{transform:rotate(180deg)}
+.couple-category-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0 9px 9px}
+.couple-category-links[hidden]{display:none!important}
+.couple-category-links button{min-height:37px;padding:8px 9px;border:1px solid #EFE3E8;border-radius:10px;background:#FFFCFD;color:#745B69;text-align:left;font-size:.72rem;line-height:1.25}
+.couple-category-links button:active{background:#F6E9EE}
+.couple-panel{margin-top:10px;padding:13px 11px;border-radius:16px}
+.couple-panel-head h3{font-size:1.04rem}
+.couple-panel-lead{font-size:.76rem}
+.guess-options{display:grid;gap:8px;margin:12px 0}
+.guess-options button{padding:13px;border:1px solid #E8D4DD;border-radius:13px;background:#FFFAFC;color:#6E5363;text-align:left;font-size:.84rem}
+.truth-category{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #F0E5E9}
+.truth-category>b{font-size:.78rem;color:#75596A}
+.truth-category>div{display:flex;gap:6px}
+.truth-category button{padding:8px 10px;border:1px solid #E7D4DC;border-radius:10px;background:#FFFAFC;color:#77596A;font-size:.72rem}
+.truth-history-item{padding:8px 0;border-bottom:1px solid #F2E8EC;color:#735D69;font-size:.76rem}
+.truth-history-item small{display:block;margin-bottom:3px;color:#A07F8E;font-size:.66rem}
+.idea-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.idea-actions .idea-toggle{width:auto;max-width:none}
+.couple-date-item{padding:11px 2px;border-bottom:1px solid #F0E5E9}
+.couple-date-item b{display:block;color:#6D5362;font-size:.83rem}
+.couple-date-item small{display:block;margin-top:3px;color:#9A8790;font-size:.68rem}
+.couple-date-item p{margin:5px 0 0;color:#7C6C75;font-size:.75rem}
+@media(max-width:360px){.couple-tools{padding:11px}.couple-category-links{grid-template-columns:1fr}.couple-panel{padding:11px 9px}}
+
+
+.truth-turn-actions{display:grid;gap:7px;margin-top:10px}
+.truth-turn-actions .btn.secondary{min-height:40px;border:1px solid #E8D9DF;border-radius:12px;background:#FFFCFD;color:#816A77}
+.guess-results{margin:12px 0}
+.guess-result-item{display:grid;gap:3px;padding:8px 0;border-bottom:1px solid #F0E5E9}
+.guess-result-item b{color:#8B6B7B;font-size:.72rem}
+.guess-result-item span{color:#766771;font-size:.74rem}
 
 </style>
