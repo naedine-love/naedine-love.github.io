@@ -1496,7 +1496,11 @@ function applyRoomModalLayout(){
     button.style.setProperty("width","100%","important");
     button.style.setProperty("box-sizing","border-box","important");
   });
-  el("roomCodeCopy").style.setProperty("min-height","50px","important");
+  var copy=el("roomCodeCopy");
+  copy.style.setProperty("min-height","50px","important");
+  copy.style.setProperty("display","block","important");
+  copy.style.setProperty("order","-1","important");
+  actions.insertBefore(copy,actions.firstChild);
 }
 function showRoomCode(code){
   el("roomCodeValue").textContent=code;
@@ -2073,4 +2077,13 @@ authP.then(async function(){
 .results-block-content{padding:4px 14px 14px}
 .results-block-content[hidden]{display:none!important}
 .results-block-content .ri{margin:10px 0;padding:13px;border-radius:13px;background:rgba(255,255,255,.8)}
+
+/* Единый окончательный вид окна создания комнаты */
+#roomCodeModal .modal-card{width:min(92vw,420px)!important;max-width:420px!important;padding:24px 20px!important;box-sizing:border-box!important}
+#roomCodeModal h2#roomCodeTitle{font-size:32px!important;line-height:1.12!important;margin:0 0 8px!important}
+#roomCodeModal #roomCodeValue{display:block!important;width:100%!important;box-sizing:border-box!important;font-size:16px!important;line-height:1.25!important;font-weight:750!important;letter-spacing:.055em!important;padding:9px 12px!important;margin:0 0 7px!important}
+#roomCodeModal .modal-actions{display:flex!important;flex-direction:column!important;gap:9px!important}
+#roomCodeModal .modal-actions #roomCodeCopy{order:-1!important;width:100%!important;min-height:50px!important;margin:0!important}
+#roomCodeModal .modal-actions #roomCodeInvite{order:0!important;width:100%!important}
+#roomCodeModal .modal-actions #roomCodeClose{order:1!important;width:100%!important}
 </style>
