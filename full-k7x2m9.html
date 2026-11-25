@@ -1013,6 +1013,19 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 #roomCodeModal #roomCodeStatus{min-height:1.2em;overflow-wrap:anywhere}
 @media(max-width:390px){#game .topbar>#back{min-width:105px!important;padding:9px 13px!important}#game #roombar{flex-basis:100%!important}#game #roombar #rcopycode{font-size:12px!important;padding:9px 11px!important}}
 
+
+/* Переключатель видимости ответа — явная тактильная кнопка */
+#game .hbtn,.hbtn{
+ display:inline-flex;align-items:center;justify-content:center;gap:7px;
+ width:auto;min-height:42px;margin:10px 0 2px;padding:10px 15px;
+ border:1px solid #E7B8C5;border-radius:14px;
+ background:linear-gradient(135deg,#F9E3EA,#F2D5E2);
+ color:#854E62;font:inherit;font-size:.86rem;font-weight:800;line-height:1.25;
+ text-align:center;text-decoration:none;cursor:pointer;
+ box-shadow:0 4px 11px rgba(181,108,128,.12);
+}
+#game .hbtn:active,.hbtn:active{transform:translateY(1px);filter:brightness(.97)}
+#game .hbtn:focus-visible,.hbtn:focus-visible{outline:3px solid #C783A0;outline-offset:3px}
 </style>
 </head>
 <body>
@@ -1742,7 +1755,7 @@ function renderAns(){
   updateAnswerSaveStatus(room);
   Array.prototype.forEach.call(a.querySelectorAll(".nm"),function(n){
     var p=n.getAttribute("data-p");n.value=nmv(+p);
-    n.addEventListener("input",function(){sset(p==="2"?"nm2":"nm1",n.value);var hb=a.querySelector('.hbtn[data-p="'+p+'"]');if(hb)hb.textContent=(hideP[p]?"Показать: ":"Скрыть: ")+(n.value||("ответ "+p))});
+    n.addEventListener("input",function(){sset(p==="2"?"nm2":"nm1",n.value);var hb=a.querySelector('.hbtn[data-p="'+p+'"]');if(hb)hb.textContent=(hideP[p]?"👁 Показать ответ":"🙈 Скрыть ответ")});
   });
   Array.prototype.forEach.call(a.querySelectorAll(".at"),function(t){
     var p=t.getAttribute("data-p"),key=K(blk,qid,p);
@@ -1753,7 +1766,7 @@ function renderAns(){
   });
   Array.prototype.forEach.call(a.querySelectorAll(".hbtn"),function(h){
     var p=h.getAttribute("data-p");
-    h.textContent=(hideP[p]?"Показать: ":"Скрыть: ")+(nmv(+p)||("ответ "+p));
+    h.textContent=(hideP[p]?"👁 Показать ответ":"🙈 Скрыть ответ");
     h.onclick=function(){hideP[p]=!hideP[p];renderAns()};
   });
 }
