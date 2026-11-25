@@ -2138,10 +2138,10 @@ function renderLettersPanel(){
 }
 function renderComplimentPanel(){
   var c=COUPLE_STATE.compliment||{};
-  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Комплименты станут общими, когда в комнату присоединится вторая половинка.</p>';
+  /* Комплимент можно отправить заранее, даже если партнёр ещё не присоединился. */
   var mine=c.mine?'<div class="daily-reveal"><b>Ваш комплимент отправлен ♡</b><p>'+coupleEscape(c.mine)+'</p></div>':'<form id="complimentForm" class="couple-form"><label for="complimentText">Что тебе особенно нравится в партнёре?</label><textarea id="complimentText" rows="3" maxlength="500" required placeholder="Напиши что-нибудь от сердца…"></textarea><button class="btn main" type="submit">Отправить комплимент</button><p class="couple-status" id="coupleActionStatus"></p></form>';
   var partner=c.bothSent?'<div class="daily-reveal"><b>Комплимент от партнёра</b><p>'+coupleEscape(c.partnerText)+'</p></div>':(c.partnerSent?'<p class="couple-wait">Партнёр уже отправил комплимент. Ваш откроется, когда вы тоже отправите свой.</p>':'<p class="couple-wait">Комплимент партнёра пока скрыт. Вы увидите его, когда отправите оба.</p>');
-  return '<p class="couple-panel-lead">Каждый день оставляйте друг другу по одному тёплому сообщению. Откроются одновременно.</p>'+mine+partner;
+  return '<p class="couple-panel-lead">Оставьте тёплые слова в удобное время. Не нужно ждать, пока партнёр зайдёт в комнату. Комплименты откроются, когда вы оба отправите свои.</p>'+mine+partner;
 }
 function renderGuessPanel(){
   if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
