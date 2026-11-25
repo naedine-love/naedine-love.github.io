@@ -1194,7 +1194,7 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 </section>
 </div>
 </main>
-<div id="roomCodeModal" role="dialog" aria-modal="true" aria-labelledby="roomCodeTitle">
+<div id="roomCodeModal" hidden aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="roomCodeTitle">
   <div class="modal-card">
     <h2 id="roomCodeTitle">Комната</h2>
     <p class="modal-hint">Поделитесь кодом со своей второй половинкой</p>
@@ -1202,7 +1202,7 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
     <div class="modal-actions">
       <button class="btn main" id="roomCodeCopy">Скопировать код</button>
       <button class="btn" id="roomCodeInvite">💌 Пригласить вторую половинку</button>
-      <button class="btn" id="roomCodeClose">Закрыть</button>
+      <button class="btn" id="roomCodeClose" type="button">Закрыть</button>
     </div>
     <p class="room-code-extra">Комната сохранится на этом устройстве автоматически 💗</p>
     <p id="roomCodeStatus" aria-live="polite"></p>
@@ -1251,8 +1251,9 @@ var FB_CFG={apiKey:"AIzaSyCnLhxurSJ8s28GWYcjSjNe_pkgkiwTBrw",authDomain:"koloda-
 var blk=1, list=[], i=0, MODE=null, MEM={}, hideP={1:false,2:false};
 var db=null, UID=null, ROOM=null, DN={}, REV={}, FETCH={}, PRG={}, PRES={}, unsubs=[], finArmed=false, progressTimers={}, presenceTimer=null, typingTimer=null, isTyping=false;
 var el=function(id){return document.getElementById(id)};
-function sget(k){try{var v=localStorage.getItem("kp_"+k);if(v!==null)return v}catch(e){}return MEM[k]||""}
-function sset(k,v){MEM[k]=v;try{localStorage.setItem("kp_"+k,v)}catch(e){}}
+function storageKey(k){k=String(k);return k.charAt(0)==="R"&&ROOM&&ROOM.id?"kp_R_"+encodeURIComponent(ROOM.id)+"_"+k.slice(1):"kp_"+k}
+function sget(k){var key=storageKey(k);try{var v=localStorage.getItem(key);if(v!==null)return v}catch(e){}return MEM[key]||""}
+function sset(k,v){var key=storageKey(k);MEM[key]=v;try{localStorage.setItem(key,v)}catch(e){}}
 function K(b,id,p){return (MODE==="room"?"R":"a")+b+"_"+id+"_"+p}
 function nmv(p){return sget(p===2?(MODE==="room"?"Rnm2":"nm2"):"nm1")}
 function nmLabel(p){return nmv(p)||(MODE==="room"?(p===1?"Вы":"Партнёр"):"Ответ "+p)}
@@ -1375,9 +1376,28 @@ function errText(e){var c=(e&&e.code)||(e&&e.message)||"";
   return "Что-то пошло не так ("+c+").";}
 function genCode(){var a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789",s="",r=new Uint8Array(12);crypto.getRandomValues(r);for(var k=0;k<12;k++){s+=a[r[k]%a.length];if(k===3||k===7)s+="-"}return s}
 function partnerUid(){return ROOM&&ROOM.members.filter(function(u){return u!==UID})[0]}
-function clearR(){
-  Object.keys(MEM).forEach(function(k){if(k.charAt(0)==="R")delete MEM[k]});
-  try{var rm=[];for(var k=0;k<localStorage.length;k++){var key=localStorage.key(k);if(key.indexOf("kp_R")===0)rm.push(key)}rm.forEach(function(x){localStorage.removeItem(x)})}catch(e){}
+function migrateLegacyRoomData(roomCode){
+  if(!roomCode)return;
+  var prefix="kp_R_"+encodeURIComponent(roomCode)+"_";
+  try{
+    var legacy=[];
+    for(var i=0;i<localStorage.length;i++){
+      var key=localStorage.key(i);
+      if(key&&key.indexOf("kp_R")===0&&key.indexOf("kp_R_")!==0)legacy.push(key);
+    }
+    legacy.forEach(function(key){
+      var target=prefix+key.slice(4),value=localStorage.getItem(key);
+      if(localStorage.getItem(target)===null&&value!==null)localStorage.setItem(target,value);
+      localStorage.removeItem(key);
+    });
+  }catch(e){}
+  Object.keys(MEM).forEach(function(key){
+    if(key.charAt(0)==="R"){
+      var target=prefix+key.slice(1);
+      if(MEM[target]===undefined)MEM[target]=MEM[key];
+      delete MEM[key];
+    }
+  });
 }
 function stopListen(){unsubs.forEach(function(u){try{u()}catch(e){}});unsubs=[];Object.keys(progressTimers).forEach(function(k){clearTimeout(progressTimers[k])});progressTimers={};if(presenceTimer){clearInterval(presenceTimer);presenceTimer=null}if(typingTimer){clearTimeout(typingTimer);typingTimer=null}isTyping=false}
 function writePresence(active){
@@ -1461,55 +1481,23 @@ function finishBlock(b){
 }
 function saveName(){sset("nm1",el("myname").value.trim())}
 function applyRoomModalLayout(){
-  var modal=el("roomCodeModal"),card=modal&&modal.querySelector(".modal-card");
-  var title=el("roomCodeTitle"),hint=modal&&modal.querySelector(".modal-hint");
-  var value=el("roomCodeValue"),actions=modal&&modal.querySelector(".modal-actions");
-  if(!modal||!card||!title||!value||!actions)return;
-  /* Видимость управляется классом .show; не фиксируем display inline, иначе окно нельзя закрыть. */
-  modal.style.setProperty("align-items","center","important");
-  modal.style.setProperty("justify-content","center","important");
-  card.style.setProperty("width","min(92vw,420px)","important");
-  card.style.setProperty("box-sizing","border-box","important");
-  card.style.setProperty("padding","25px 20px","important");
-  card.style.setProperty("border-radius","26px","important");
-  title.style.setProperty("font-size","32px","important");
-  title.style.setProperty("line-height","1.15","important");
-  title.style.setProperty("margin","0 0 9px","important");
-  title.style.setProperty("color","#765365","important");
-  if(hint)hint.style.setProperty("margin","0 0 12px","important");
-  value.style.setProperty("display","block","important");
-  value.style.setProperty("width","100%","important");
-  value.style.setProperty("box-sizing","border-box","important");
-  value.style.setProperty("font-size","16px","important");
-  value.style.setProperty("font-weight","750","important");
-  value.style.setProperty("letter-spacing",".055em","important");
-  value.style.setProperty("padding","9px 12px","important");
-  value.style.setProperty("margin","0 0 6px","important");
-  value.style.setProperty("border-radius","14px","important");
-  actions.style.setProperty("display","flex","important");
-  actions.style.setProperty("flex-direction","column","important");
-  actions.style.setProperty("gap","9px","important");
-  ["roomCodeCopy","roomCodeInvite","roomCodeClose"].forEach(function(id,i){
-    var button=el(id);
-    if(!button)return;
-    button.style.setProperty("order",String(i),"important");
-    button.style.setProperty("width","100%","important");
-    button.style.setProperty("box-sizing","border-box","important");
-  });
+  var actions=el("roomCodeModal")&&el("roomCodeModal").querySelector(".modal-actions");
   var copy=el("roomCodeCopy");
-  copy.style.setProperty("min-height","50px","important");
-  copy.style.setProperty("display","block","important");
-  copy.style.setProperty("order","-1","important");
-  actions.insertBefore(copy,actions.firstChild);
+  if(actions&&copy&&copy.parentNode===actions)actions.insertBefore(copy,actions.firstChild);
 }
 function showRoomCode(code){
+  var modal=el("roomCodeModal");
   el("roomCodeValue").textContent=code;
   el("roomCodeStatus").textContent="";
   el("roomCodeCopy").textContent="Скопировать код";
   applyRoomModalLayout();
-  el("roomCodeModal").classList.add("show");
+  modal.hidden=false;modal.setAttribute("aria-hidden","false");modal.classList.add("show");
 }
-function closeRoomCode(){el("roomCodeModal").classList.remove("show")}
+function closeRoomCode(){
+  var modal=el("roomCodeModal");
+  if(!modal)return;
+  modal.classList.remove("show");modal.setAttribute("aria-hidden","true");modal.hidden=true;
+}
 async function copyRoomCode(){
   var code=el("roomCodeValue").textContent;
   try{
@@ -1556,11 +1544,17 @@ async function inviteToRoom(){
   }
 }
 el("roomCodeInvite").onclick=inviteToRoom;
-el("roomCodeClose").onclick=closeRoomCode;
-el("roomCodeModal").addEventListener("click",function(e){if(e.target===el("roomCodeModal"))closeRoomCode()});
+el("roomCodeClose").onclick=function(e){if(e)e.preventDefault();closeRoomCode()};
+el("roomCodeModal").addEventListener("click",function(e){
+  var close=e.target&&e.target.closest?e.target.closest("#roomCodeClose"):null;
+  if(close){e.preventDefault();closeRoomCode();return}
+  if(e.target===el("roomCodeModal"))closeRoomCode();
+});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!el("roomCodeModal").hidden)closeRoomCode()});
 
 function enterRoom(code){
-  if(sget("room")&&sget("room")!==code)clearR();
+  var previousRoom=sget("room");
+  if(previousRoom)migrateLegacyRoomData(previousRoom);
   ROOM={id:code,members:[]};DN={};REV={};FETCH={};sset("room",code);listenRoom();startGame("room",true);
   /* После соединения участников сервер повторно проверяет доступ пары. */
   authP.then(restoreTelegramAccess).catch(function(){});
@@ -1811,7 +1805,7 @@ document.addEventListener("keydown",function(e){
 function updateAnswerSaveStatus(room){
   var status=el("answerSaveStatus");if(!status)return;
   var copy=status.querySelector(".save-copy"),mark=status.querySelector(".save-mark");
-  var key="kp_"+K(blk,list[i]&&list[i].id||0,1),hasValue=String(sget(K(blk,list[i]&&list[i].id||0,1))||"").length>0,ok=true,exists=false;
+  var key=storageKey(K(blk,list[i]&&list[i].id||0,1)),hasValue=String(sget(K(blk,list[i]&&list[i].id||0,1))||"").length>0,ok=true,exists=false;
   try{exists=localStorage.getItem(key)!==null}catch(e){ok=false}
   status.classList.toggle("error",!ok&&hasValue);status.classList.remove("pending");
   mark.textContent=hasValue?(ok?"✓":"!"):"·";
@@ -2079,6 +2073,8 @@ authP.then(async function(){
 .results-block-content .ri{margin:10px 0;padding:13px;border-radius:13px;background:rgba(255,255,255,.8)}
 
 /* Единый окончательный вид окна создания комнаты */
+#roomCodeModal[hidden]{display:none!important}
+#roomCodeModal.show:not([hidden]){display:flex!important}
 #roomCodeModal .modal-card{width:min(92vw,420px)!important;max-width:420px!important;padding:24px 20px!important;box-sizing:border-box!important}
 #roomCodeModal h2#roomCodeTitle{font-size:32px!important;line-height:1.12!important;margin:0 0 8px!important}
 #roomCodeModal #roomCodeValue{display:block!important;width:100%!important;box-sizing:border-box!important;font-size:16px!important;line-height:1.25!important;font-weight:750!important;letter-spacing:.055em!important;padding:9px 12px!important;margin:0 0 7px!important}
