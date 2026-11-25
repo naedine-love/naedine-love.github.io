@@ -601,8 +601,8 @@ app.post("/api/couple/sync", async (req, res) => {
       ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.user.uid).get(),
       ctx.partnerUid ? ctx.roomRef.collection("dailyAnswers").doc(date + "_" + ctx.partnerUid).get() : Promise.resolve(null),
       ctx.roomRef.collection("ideas").limit(40).get(),
-      ctx.roomRef.collection("letters").limit(100).get(),
-      ctx.roomRef.collection("activities").limit(60).get(),
+      ctx.roomRef.collection("letters").orderBy("createdAt", "desc").limit(100).get(),
+      ctx.roomRef.collection("activities").orderBy("createdAt", "desc").limit(60).get(),
       ctx.roomRef.collection("done").get()
     ]);
     const profiles = {};
