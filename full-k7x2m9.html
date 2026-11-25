@@ -1456,10 +1456,49 @@ function finishBlock(b){
   });
 }
 function saveName(){sset("nm1",el("myname").value.trim())}
+function applyRoomModalLayout(){
+  var modal=el("roomCodeModal"),card=modal&&modal.querySelector(".modal-card");
+  var title=el("roomCodeTitle"),hint=modal&&modal.querySelector(".modal-hint");
+  var value=el("roomCodeValue"),actions=modal&&modal.querySelector(".modal-actions");
+  if(!modal||!card||!title||!value||!actions)return;
+  modal.style.setProperty("display","flex","important");
+  modal.style.setProperty("align-items","center","important");
+  modal.style.setProperty("justify-content","center","important");
+  card.style.setProperty("width","min(92vw,420px)","important");
+  card.style.setProperty("box-sizing","border-box","important");
+  card.style.setProperty("padding","25px 20px","important");
+  card.style.setProperty("border-radius","26px","important");
+  title.style.setProperty("font-size","30px","important");
+  title.style.setProperty("line-height","1.15","important");
+  title.style.setProperty("margin","0 0 9px","important");
+  title.style.setProperty("color","#765365","important");
+  if(hint)hint.style.setProperty("margin","0 0 12px","important");
+  value.style.setProperty("display","block","important");
+  value.style.setProperty("width","100%","important");
+  value.style.setProperty("box-sizing","border-box","important");
+  value.style.setProperty("font-size","20px","important");
+  value.style.setProperty("font-weight","750","important");
+  value.style.setProperty("letter-spacing",".055em","important");
+  value.style.setProperty("padding","11px 12px","important");
+  value.style.setProperty("margin","0 0 10px","important");
+  value.style.setProperty("border-radius","14px","important");
+  actions.style.setProperty("display","flex","important");
+  actions.style.setProperty("flex-direction","column","important");
+  actions.style.setProperty("gap","9px","important");
+  ["roomCodeCopy","roomCodeInvite","roomCodeClose"].forEach(function(id,i){
+    var button=el(id);
+    if(!button)return;
+    button.style.setProperty("order",String(i),"important");
+    button.style.setProperty("width","100%","important");
+    button.style.setProperty("box-sizing","border-box","important");
+  });
+  el("roomCodeCopy").style.setProperty("min-height","50px","important");
+}
 function showRoomCode(code){
   el("roomCodeValue").textContent=code;
   el("roomCodeStatus").textContent="";
   el("roomCodeCopy").textContent="Скопировать код";
+  applyRoomModalLayout();
   el("roomCodeModal").classList.add("show");
 }
 function closeRoomCode(){el("roomCodeModal").classList.remove("show")}
