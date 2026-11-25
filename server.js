@@ -773,7 +773,6 @@ app.post("/api/couple/letter/send", async (req, res) => {
   if (!requireFirebaseReady(res)) return;
   const ctx = await coupleContext(req, res);
   if (!ctx) return;
-  if (!ctx.partnerUid) return sendError(res, 409, "partner_not_joined", "Сначала пригласите вторую половинку в комнату.");
   const body = String(req.body && req.body.body || "").trim();
   const openAt = Number(req.body && req.body.openAt || 0);
   const now = Date.now();
