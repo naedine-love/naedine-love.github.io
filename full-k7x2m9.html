@@ -1465,7 +1465,7 @@ function applyRoomModalLayout(){
   var title=el("roomCodeTitle"),hint=modal&&modal.querySelector(".modal-hint");
   var value=el("roomCodeValue"),actions=modal&&modal.querySelector(".modal-actions");
   if(!modal||!card||!title||!value||!actions)return;
-  modal.style.setProperty("display","flex","important");
+  /* Видимость управляется классом .show; не фиксируем display inline, иначе окно нельзя закрыть. */
   modal.style.setProperty("align-items","center","important");
   modal.style.setProperty("justify-content","center","important");
   card.style.setProperty("width","min(92vw,420px)","important");
