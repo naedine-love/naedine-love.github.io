@@ -2139,8 +2139,9 @@ function renderGuessPanel(){
   var g=COUPLE_STATE.games&&COUPLE_STATE.games.guess;
   if(!g)return '<p class="couple-panel-lead">Десять вопросов. Каждый выбирает ответ независимо, а результаты открываются только после выбора обоих.</p><button class="btn main" type="button" id="startGuessGame">Начать игру ♡</button>';
   if(g.completed){
-    var score=(g.rounds||[]).filter(function(r){return r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid]}).length;
-    return '<div class="history-summary"><b>Игра завершена!</b><span>'+score+' совпадений из 10</span></div><p class="couple-panel-lead">Посмотрите, в чём ваши взгляды совпали, а где вы удивили друг друга.</p><button class="btn main" type="button" id="restartGuessGame">Сыграть ещё раз</button>';
+    var rounds=g.rounds||[],score=rounds.filter(function(r){return r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid]}).length;
+    var details=rounds.map(function(r){var q=GUESS_QUESTIONS[r.round],same=r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid];return '<p class="guess-result-item"><b>'+(same?'♡ Совпали':'✦ По-разному')+'</b><span>'+coupleEscape(q.q)+'</span></p>'}).join('');
+    return '<div class="history-summary"><b>Игра завершена!</b><span>'+score+' совпадений из 10</span></div><div class="guess-results">'+details+'</div><button class="btn main" type="button" id="restartGuessGame">Сыграть ещё раз</button>';
   }
   var index=Math.max(0,Math.min(9,Number(g.round)||0)),q=GUESS_QUESTIONS[index];
   var progress='<p class="couple-panel-lead">Вопрос '+(index+1)+' из 10</p>';
@@ -2151,7 +2152,7 @@ function renderTruthPanel(){
   if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
   var g=COUPLE_STATE.games&&COUPLE_STATE.games.truth||{},pending=g.pending,uid=COUPLE_STATE.uid,turnUid=g.currentTurnUid||COUPLE_STATE.members[0],mine=turnUid===uid;
   var history=(g.history||[]).slice(-3).reverse().map(function(item){return '<p class="truth-history-item"><small>'+coupleEscape(({romance:"Романтика",humor:"Юмор",honesty:"Откровенность",adult:"18+"}[item.category]||"Игра"))+' · '+(item.kind==="truth"?"Правда":"Действие")+'</small>'+coupleEscape(item.prompt)+'</p>'}).join('');
-  if(pending)return '<div class="daily-question-card"><span class="eyebrow">'+coupleEscape(({romance:"РОМАНТИКА",humor:"ЮМОР",honesty:"ОТКРОВЕННОСТЬ",adult:"18+"}[pending.category]||"ВАШ ХОД"))+' · '+(pending.kind==="truth"?"ПРАВДА":"ДЕЙСТВИЕ")+'</span><p>'+coupleEscape(pending.prompt)+'</p></div>'+(pending.byUid===uid?'<p class="couple-panel-lead">Ваш ход. Выполните задание или ответьте, затем передайте очередь партнёру.</p><button class="btn main" type="button" id="completeTruthTurn">Готово, передать ход</button>':'<p class="couple-wait">Партнёр выбрал задание. После его выполнения очередь перейдёт к вам.</p>')+history;
+  if(pending)return '<div class="daily-question-card"><span class="eyebrow">'+coupleEscape(({romance:"РОМАНТИКА",humor:"ЮМОР",honesty:"ОТКРОВЕННОСТЬ",adult:"18+"}[pending.category]||"ВАШ ХОД"))+' · '+(pending.kind==="truth"?"ПРАВДА":"ДЕЙСТВИЕ")+'</span><p>'+coupleEscape(pending.prompt)+'</p></div>'+(pending.byUid===uid?'<p class="couple-panel-lead">Ваш ход. Можно выполнить задание или спокойно пропустить его.</p><div class="truth-turn-actions"><button class="btn main" type="button" id="completeTruthTurn">Выполнено · передать ход</button><button class="btn secondary" type="button" id="skipTruthTurn">Пропустить</button></div>':'<p class="couple-wait">Партнёр выбрал задание. После его хода очередь перейдёт к вам.</p>')+history;
   if(!mine)return '<div class="couple-wait">Сейчас очередь партнёра. Скоро он выберет правду или действие для вас обоих.</div>'+history;
   var cats=[["romance","♡ Романтика"],["humor","☀ Юмор"],["honesty","✦ Откровенность"],["adult","🔥 18+"]].map(function(c){return '<div class="truth-category"><b>'+c[1]+'</b><div><button type="button" data-truth-choice="'+c[0]+'|truth">Правда</button><button type="button" data-truth-choice="'+c[0]+'|action">Действие</button></div></div>'}).join('');
   return '<p class="couple-panel-lead">Ваш ход. Выберите настроение и решите: правда или действие. Любое задание можно пропустить.</p>'+cats+history;
@@ -2301,6 +2302,7 @@ el("couplePanelContent").addEventListener("click",function(e){
   if(e.target&&e.target.id==="startGuessGame")startGuessGame(false);
   if(e.target&&e.target.id==="restartGuessGame")startGuessGame(true);
   if(e.target&&e.target.id==="completeTruthTurn")completeTruthTurn(e.target);
+  if(e.target&&e.target.id==="skipTruthTurn")completeTruthTurn(e.target);
   if(e.target&&e.target.id==="surpriseDateIdea"){coupleSurpriseIdeaId=DATE_IDEAS[Math.floor(Math.random()*DATE_IDEAS.length)].id;renderCouplePanel()}
 });
 
@@ -2594,5 +2596,13 @@ authP.then(async function(){
 .couple-date-item small{display:block;margin-top:3px;color:#9A8790;font-size:.68rem}
 .couple-date-item p{margin:5px 0 0;color:#7C6C75;font-size:.75rem}
 @media(max-width:360px){.couple-tools{padding:11px}.couple-category-links{grid-template-columns:1fr}.couple-panel{padding:11px 9px}}
+
+
+.truth-turn-actions{display:grid;gap:7px;margin-top:10px}
+.truth-turn-actions .btn.secondary{min-height:40px;border:1px solid #E8D9DF;border-radius:12px;background:#FFFCFD;color:#816A77}
+.guess-results{margin:12px 0}
+.guess-result-item{display:grid;gap:3px;padding:8px 0;border-bottom:1px solid #F0E5E9}
+.guess-result-item b{color:#8B6B7B;font-size:.72rem}
+.guess-result-item span{color:#766771;font-size:.74rem}
 
 </style>
