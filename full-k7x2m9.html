@@ -2192,11 +2192,52 @@ async function enableCoupleNotifications(){
     else roomMsg("Разрешите уведомления для сайта в настройках браузера.");
   }catch(e){roomMsg("Не удалось включить уведомления в этом браузере.")}
 }
-async function toggleDateIdea(ideaId,button){
+async function toggleDateIdea(ideaId,button,mode){
   button.disabled=true;
-  try{await coupleApi("/api/couple/idea/toggle",{roomCode:ROOM.id,ideaId:ideaId});await syncCoupleData(false)}
+  try{await coupleApi("/api/couple/idea/toggle",{roomCode:ROOM.id,ideaId:ideaId,mode:mode||"done"});await syncCoupleData(false)}
   catch(e){roomMsg(e.message||"Не удалось обновить идею")}
   finally{button.disabled=false}
+}
+async function sendCompliment(form){
+  var text=el("complimentText").value.trim(),status=el("coupleActionStatus"),button=form.querySelector('button[type="submit"]');
+  if(!text){status.textContent="Напишите несколько тёплых слов.";return}
+  button.disabled=true;
+  try{await coupleApi("/api/couple/compliment/send",{roomCode:ROOM.id,date:COUPLE_STATE.date,text:text});await syncCoupleData(false)}
+  catch(e){status.textContent=e.message||"Не удалось отправить комплимент."}
+  finally{button.disabled=false}
+}
+async function addCoupleDate(form){
+  var title=el("coupleDateTitle").value.trim(),date=el("coupleDateValue").value,note=el("coupleDateNote").value.trim(),status=el("coupleActionStatus"),button=form.querySelector('button[type="submit"]');
+  if(!title||!date){status.textContent="Укажите название и дату.";return}
+  button.disabled=true;
+  try{await coupleApi("/api/couple/date/add",{roomCode:ROOM.id,title:title,date:date,note:note});await syncCoupleData(false)}
+  catch(e){status.textContent=e.message||"Не удалось добавить дату."}
+  finally{button.disabled=false}
+}
+async function startGuessGame(restart){
+  var button=el(restart?"restartGuessGame":"startGuessGame");if(button)button.disabled=true;
+  try{await coupleApi("/api/couple/game/guess/start",{roomCode:ROOM.id,restart:!!restart});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось начать игру.")}
+  finally{if(button)button.disabled=false}
+}
+async function answerGuess(choice,button){
+  if(button)button.disabled=true;
+  try{await coupleApi("/api/couple/game/guess/answer",{roomCode:ROOM.id,round:Number(COUPLE_STATE.games.guess.round),choice:String(choice)});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось сохранить ответ.")}
+  finally{if(button)button.disabled=false}
+}
+async function chooseTruthPrompt(category,kind){
+  var options=(TRUTH_PROMPTS[category]||{})[kind]||[];
+  if(!options.length)return;
+  var prompt=options[Math.floor(Math.random()*options.length)];
+  try{await coupleApi("/api/couple/game/truth/choose",{roomCode:ROOM.id,category:category,kind:kind,prompt:prompt});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Сейчас не ваш ход.")}
+}
+async function completeTruthTurn(button){
+  if(button)button.disabled=true;
+  try{await coupleApi("/api/couple/game/truth/complete",{roomCode:ROOM.id});await syncCoupleData(false)}
+  catch(e){roomMsg(e.message||"Не удалось передать ход.")}
+  finally{if(button)button.disabled=false}
 }
 async function saveDailyAnswer(form){
   var answer=el("dailyAnswer").value.trim(),question=dailyQuestionFor(COUPLE_STATE.date);
@@ -2225,22 +2266,42 @@ async function markCoupleNotificationRead(id,button){
   catch(e){roomMsg(e.message||"Не удалось обновить уведомление")}
   finally{button.disabled=false}
 }
-el("dailyOpen").onclick=function(){openCouplePanel("daily")};
-el("historyOpen").onclick=function(){openCouplePanel("history")};
-el("ideasOpen").onclick=function(){openCouplePanel("ideas")};
-el("lettersOpen").onclick=function(){openCouplePanel("letters")};
-el("notificationsOpen").onclick=function(){openCouplePanel("notifications")};
+el("coupleTools").addEventListener("click",function(e){
+  var category=e.target.closest?e.target.closest("[data-couple-category]"):null;
+  if(category){
+    var name=category.getAttribute("data-couple-category"),content=el("coupleTools").querySelector('[data-couple-category-content="'+name+'"]');
+    var wasOpen=!content.hidden;
+    el("coupleTools").querySelectorAll("[data-couple-category-content]").forEach(function(x){x.hidden=true});
+    el("coupleTools").querySelectorAll(".couple-category-toggle").forEach(function(x){x.classList.remove("active")});
+    if(!wasOpen){content.hidden=false;category.classList.add("active")}
+    return;
+  }
+  var open=e.target.closest?e.target.closest("[data-couple-open]"):null;
+  if(open){openCouplePanel(open.getAttribute("data-couple-open"));return}
+});
 el("couplePanelClose").onclick=closeCouplePanel;
 el("couplePanelContent").addEventListener("submit",function(e){
   if(e.target.id==="dailyAnswerForm"){e.preventDefault();saveDailyAnswer(e.target)}
   if(e.target.id==="secretLetterForm"){e.preventDefault();sendSecretLetter(e.target)}
+  if(e.target.id==="complimentForm"){e.preventDefault();sendCompliment(e.target)}
+  if(e.target.id==="coupleDateForm"){e.preventDefault();addCoupleDate(e.target)}
 });
 el("couplePanelContent").addEventListener("click",function(e){
   var idea=e.target.closest?e.target.closest("[data-idea-toggle]"):null;
-  if(idea){toggleDateIdea(idea.getAttribute("data-idea-toggle"),idea);return}
+  if(idea){toggleDateIdea(idea.getAttribute("data-idea-toggle"),idea,"done");return}
+  var want=e.target.closest?e.target.closest("[data-idea-want]"):null;
+  if(want){toggleDateIdea(want.getAttribute("data-idea-want"),want,"want");return}
   var read=e.target.closest?e.target.closest("[data-notification-read]"):null;
   if(read){markCoupleNotificationRead(read.getAttribute("data-notification-read"),read);return}
+  var guess=e.target.closest?e.target.closest("[data-guess-choice]"):null;
+  if(guess){answerGuess(guess.getAttribute("data-guess-choice"),guess);return}
+  var truth=e.target.closest?e.target.closest("[data-truth-choice]"):null;
+  if(truth){var bits=truth.getAttribute("data-truth-choice").split("|");chooseTruthPrompt(bits[0],bits[1]);return}
   if(e.target&&e.target.id==="enableCoupleNotifications")enableCoupleNotifications();
+  if(e.target&&e.target.id==="startGuessGame")startGuessGame(false);
+  if(e.target&&e.target.id==="restartGuessGame")startGuessGame(true);
+  if(e.target&&e.target.id==="completeTruthTurn")completeTruthTurn(e.target);
+  if(e.target&&e.target.id==="surpriseDateIdea"){coupleSurpriseIdeaId=DATE_IDEAS[Math.floor(Math.random()*DATE_IDEAS.length)].id;renderCouplePanel()}
 });
 
 /* ---------- результаты ---------- */
