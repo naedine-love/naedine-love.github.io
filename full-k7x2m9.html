@@ -1632,6 +1632,13 @@ function go(d){
   if(d<0&&i===0){if(blk>1){blk-=1;chips();list=make(blk);i=list.length-1;draw(-1)}return}
   if(d>0&&i>=list.length){if(blk<lastBlock()){blk+=1;chips();build()}else{build()}return}
   if(d>0&&list[i].bridge){pendingProtectedBlock=3;showPaywall();return}
+  if(d>0&&i<list.length&&!list[i].bridge&&!list[i].intro){
+    var currentId=list[i].id;
+    var answerOne=String(sget(K(blk,currentId,1))||"").trim();
+    var answerTwo=String(sget(K(blk,currentId,2))||"").trim();
+    var completed=MODE==="room"?!!answerOne:(!!answerOne&&!!answerTwo);
+    if(completed)list.splice(i,1);
+  }
   i+=d;draw(d);
 }
 function blockStats(n){
