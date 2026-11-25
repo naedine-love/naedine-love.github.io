@@ -1043,6 +1043,16 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 #roomCodeValue{font-size:clamp(1.1rem,5vw,1.45rem);letter-spacing:.1em;padding:13px 8px;margin:0 0 12px}
 #roomCodeModal .modal-actions{display:grid;gap:10px}
 #roomCodeModal .room-code-extra{margin:13px 0 0;color:#8A817D;font-size:.78rem;line-height:1.45}
+
+/* Финальная компоновка окна создания комнаты */
+#roomCodeModal #roomCodeTitle{font-size:1.9rem!important;line-height:1.15!important;margin:0 0 9px!important;color:#765365!important}
+#roomCodeModal .room-code-kicker{display:none!important}
+#roomCodeModal .modal-hint{margin:0 0 12px!important}
+#roomCodeModal #roomCodeValue{font-size:clamp(17px,4.5vw,22px)!important;font-weight:750!important;letter-spacing:.055em!important;padding:11px 12px!important;margin:0 0 10px!important;border-radius:14px!important}
+#roomCodeModal .modal-actions{display:flex!important;flex-direction:column!important;gap:9px!important}
+#roomCodeModal #roomCodeCopy{order:0!important;margin-top:0!important;min-height:50px!important}
+#roomCodeModal #roomCodeInvite{order:1!important}
+#roomCodeModal #roomCodeClose{order:2!important}
 </style>
 </head>
 <body>
@@ -1182,8 +1192,7 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 </main>
 <div id="roomCodeModal" role="dialog" aria-modal="true" aria-labelledby="roomCodeTitle">
   <div class="modal-card">
-    <p class="room-code-kicker">ВАША КОМНАТА</p>
-    <h2 id="roomCodeTitle">Номер комнаты</h2>
+    <h2 id="roomCodeTitle">Комната</h2>
     <p class="modal-hint">Поделитесь кодом со своей второй половинкой</p>
     <div id="roomCodeValue"></div>
     <div class="modal-actions">
