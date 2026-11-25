@@ -698,7 +698,13 @@ app.post("/api/couple/sync", async (req, res) => {
           note: String(d.note || ""), createdBy: String(d.createdBy || ""), createdAt: Number(d.createdAt || 0) };
       }),
       games: {
-        guess: guessSnap.exists ? (guessSnap.data() || {}) : null,
+        guess: guessSnap.exists ? {
+          round: Number((guessSnap.data() || {}).round || 0),
+          completed: !!(guessSnap.data() || {}).completed,
+          rounds: Array.isArray((guessSnap.data() || {}).rounds) ? (guessSnap.data() || {}).rounds : [],
+          answeredByMe: !!((guessSnap.data() || {}).answers || {})[ctx.user.uid],
+          partnerAnswered: !!(ctx.partnerUid && ((guessSnap.data() || {}).answers || {})[ctx.partnerUid])
+        } : null,
         truth: truthSnap.exists ? (truthSnap.data() || {}) : null
       }
     });
