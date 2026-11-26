@@ -705,13 +705,12 @@ app.post("/api/couple/sync", async (req, res) => {
           note: String(d.note || ""), createdBy: String(d.createdBy || ""), createdAt: Number(d.createdAt || 0) };
       }),
       games: {
-        guess: guessSnap.exists ? {
-          round: Number((guessSnap.data() || {}).round || 0),
-          completed: !!(guessSnap.data() || {}).completed,
-          rounds: Array.isArray((guessSnap.data() || {}).rounds) ? (guessSnap.data() || {}).rounds : [],
-          answeredByMe: !!((guessSnap.data() || {}).answers || {})[ctx.user.uid],
-          partnerAnswered: !!(ctx.partnerUid && ((guessSnap.data() || {}).answers || {})[ctx.partnerUid])
-        } : null,
+        guess: guessSnap.exists ? (() => {
+          const g=guessSnap.data()||{},mine=(g.playerAnswers||{})[ctx.user.uid]||{};
+          return {completed:!!g.completed,rounds:g.completed&&Array.isArray(g.rounds)?g.rounds:[],
+            myAnswers:mine,answeredCount:Object.keys(mine).length,
+            partnerCompleted:!!ctx.partnerUid&&(Array.isArray(g.completedBy)&&g.completedBy.includes(ctx.partnerUid))};
+        })() : null,
         truth: truthSnap.exists ? (truthSnap.data() || {}) : null
       }
     });
@@ -853,62 +852,45 @@ app.post("/api/couple/memory/add", async (req, res) => {
 
 app.post("/api/couple/game/guess/start", async (req, res) => {
   if (!requireFirebaseReady(res)) return;
-  const ctx = await coupleContext(req, res);
-  if (!ctx) return;
-  if (!ctx.partnerUid) return sendError(res, 409, "partner_not_joined", "Для игры нужны оба участника комнаты.");
+  const ctx = await coupleContext(req, res); if (!ctx) return;
+  if (!ctx.partnerUid) return sendError(res,409,"partner_not_joined","Для игры нужны оба участника комнаты.");
   try {
-    const ref = ctx.roomRef.collection("games").doc("guess");
-    let state;
-    await ctx.db.runTransaction(async tx => {
-      const snap = await tx.get(ref);
-      const current = snap.exists ? snap.data() : null;
-      if (!current || current.completed || req.body && req.body.restart === true) {
-        state = { round: 0, answers: {}, rounds: [], completed: false, startedAt: Date.now(), updatedAt: Date.now() };
-        tx.set(ref, state);
-      } else state = current;
+    const ref=ctx.roomRef.collection("games").doc("guess");let state;
+    await ctx.db.runTransaction(async tx=>{
+      const snap=await tx.get(ref),cur=snap.exists?snap.data():null;
+      if(!cur||cur.completed||req.body&&req.body.restart===true){
+        state={playerAnswers:{},completedBy:[],rounds:[],completed:false,startedAt:Date.now(),updatedAt:Date.now()};tx.set(ref,state);
+      }else state=cur;
     });
-    return res.json({ ok: true, state: { round: Number(state.round || 0), completed: !!state.completed, rounds: Array.isArray(state.rounds) ? state.rounds : [], answeredByMe: !!((state.answers || {})[ctx.user.uid]), partnerAnswered: !!(ctx.partnerUid && (state.answers || {})[ctx.partnerUid]) } });
-  } catch (error) {
-    console.error("Guess game start failed:", error.message);
-    return sendError(res, 503, "guess_start_failed", "Не удалось открыть игру.");
-  }
+    const mine=(state.playerAnswers||{})[ctx.user.uid]||{};
+    return res.json({ok:true,state:{completed:!!state.completed,rounds:state.completed?(state.rounds||[]):[],myAnswers:mine,answeredCount:Object.keys(mine).length,partnerCompleted:(state.completedBy||[]).includes(ctx.partnerUid),completedBy:state.completedBy||[]}});
+  }catch(error){console.error("Guess start failed:",error.message);return sendError(res,503,"guess_start_failed","Не удалось открыть игру.");}
 });
-app.post("/api/couple/game/guess/answer", async (req, res) => {
-  if (!requireFirebaseReady(res)) return;
-  const ctx = await coupleContext(req, res);
-  if (!ctx) return;
-  const round = Number(req.body && req.body.round);
-  const choice = String(req.body && req.body.choice || "");
-  if (!Number.isInteger(round) || round < 0 || round > 9 || !["0", "1"].includes(choice)) return sendError(res, 400, "invalid_guess_answer", "Выберите один из двух вариантов.");
-  try {
-    const ref = ctx.roomRef.collection("games").doc("guess");
-    let state;
-    await ctx.db.runTransaction(async tx => {
-      const snap = await tx.get(ref);
-      if (!snap.exists) throw new Error("game_not_started");
-      const current = snap.data() || {};
-      if (current.completed || Number(current.round) !== round) throw new Error("round_closed");
-      const answers = Object.assign({}, current.answers || {});
-      if (answers[ctx.user.uid] !== undefined) throw new Error("already_answered");
-      answers[ctx.user.uid] = choice;
-      const next = Object.assign({}, current, { answers, updatedAt: Date.now() });
-      if (ctx.partnerUid && answers[ctx.partnerUid] !== undefined) {
-        const rounds = Array.isArray(current.rounds) ? current.rounds.slice() : [];
-        rounds.push({ round, answers: { [ctx.user.uid]: answers[ctx.user.uid], [ctx.partnerUid]: answers[ctx.partnerUid] } });
-        next.rounds = rounds;
-        next.round = round + 1;
-        next.answers = {};
-        next.completed = next.round >= 10;
-        if (next.completed) next.completedAt = Date.now();
+app.post("/api/couple/game/guess/answer", async (req,res)=>{
+  if(!requireFirebaseReady(res))return;
+  const ctx=await coupleContext(req,res);if(!ctx)return;
+  const round=Number(req.body&&req.body.round),choice=String(req.body&&req.body.choice||"").trim();
+  if(!Number.isInteger(round)||round<0||round>9||!choice||choice.length>120)return sendError(res,400,"invalid_guess_answer","Выберите вариант или напишите свой (до 120 символов).");
+  try{
+    const ref=ctx.roomRef.collection("games").doc("guess");let state;
+    await ctx.db.runTransaction(async tx=>{
+      const snap=await tx.get(ref);if(!snap.exists)throw new Error("game_not_started");
+      const cur=snap.data()||{};if(cur.completed)throw new Error("game_completed");
+      const playerAnswers=Object.assign({},cur.playerAnswers||{}),mine=Object.assign({},playerAnswers[ctx.user.uid]||{});
+      if(mine[round]!==undefined)throw new Error("already_answered");
+      mine[round]=choice;playerAnswers[ctx.user.uid]=mine;
+      const completedBy=Array.isArray(cur.completedBy)?cur.completedBy.slice():[];
+      if(Object.keys(mine).length>=10&&!completedBy.includes(ctx.user.uid))completedBy.push(ctx.user.uid);
+      const next=Object.assign({},cur,{playerAnswers,completedBy,updatedAt:Date.now()});
+      if(ctx.partnerUid&&completedBy.includes(ctx.user.uid)&&completedBy.includes(ctx.partnerUid)){
+        next.rounds=Array.from({length:10},(_,i)=>({round:i,answers:{[ctx.user.uid]:playerAnswers[ctx.user.uid][i],[ctx.partnerUid]:playerAnswers[ctx.partnerUid][i]}}));
+        next.completed=true;next.completedAt=Date.now();
       }
-      tx.set(ref, next, { merge: true });
-      state = next;
+      tx.set(ref,next,{merge:true});state=next;
     });
-    return res.json({ ok: true, state: { round: Number(state.round || 0), completed: !!state.completed, rounds: Array.isArray(state.rounds) ? state.rounds : [], answeredByMe: !!((state.answers || {})[ctx.user.uid]), partnerAnswered: !!(ctx.partnerUid && (state.answers || {})[ctx.partnerUid]) } });
-  } catch (error) {
-    const code = error.message === "already_answered" ? "already_answered" : error.message === "round_closed" ? "round_closed" : "guess_answer_failed";
-    return sendError(res, code === "guess_answer_failed" ? 503 : 409, code, "Не удалось сохранить ответ. Обновите игру.");
-  }
+    const mine=(state.playerAnswers||{})[ctx.user.uid]||{};
+    return res.json({ok:true,state:{completed:!!state.completed,rounds:state.completed?(state.rounds||[]):[],myAnswers:mine,answeredCount:Object.keys(mine).length,partnerCompleted:(state.completedBy||[]).includes(ctx.partnerUid),completedBy:state.completedBy||[]}});
+  }catch(error){const conflict=["already_answered","game_completed"].includes(error.message);return sendError(res,conflict?409:503,error.message||"guess_answer_failed",conflict?"Этот вопрос уже сохранён.":"Не удалось сохранить ответ.");}
 });
 app.post("/api/couple/game/truth/choose", async (req, res) => {
   if (!requireFirebaseReady(res)) return;
