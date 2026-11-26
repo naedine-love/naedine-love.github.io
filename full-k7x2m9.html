@@ -1561,6 +1561,11 @@ function restoreTelegramAccess(){
       try{localStorage.removeItem("kp_full_access");localStorage.removeItem("kp_cached_protected_questions")}catch(e){}
       updateOverview();chips();
     }
+    /* Show a safe diagnostic instead of silently leaving every block locked. */
+    if(ROOM&&MODE==="room"){
+      var code=String(error&&error.code||error&&error.message||"access_unknown").replace(/[^a-z0-9_/-]/gi,"").slice(0,48);
+      roomMsg("Доступ пары не восстановился. Причина: "+code+". Нажмите «Обновить» и проверьте подписку в боте.");
+    }
   });
 }
 function roomMsg(t){el("rmsg2").textContent=t;el("gmsg").textContent=t}
@@ -3061,4 +3066,40 @@ answerGuess=async function(choice,button){
 #couplePanelContent #guessCustom{width:100%;min-height:44px;padding:11px 13px;border:1px solid #E5D1D9;border-radius:13px;background:#FFFCFB;color:#3F5149;font:inherit}
 #couplePanelContent #guessCustomSend{width:100%}
 #couplePanelContent #customIdeaForm{margin-top:16px;padding:13px;border:1px solid #E9D7DE;border-radius:16px;background:#FBF4F6}
+</style>
+
+<style id="naedine-room-buttons-one-size-v14">
+/* One compact shared button geometry: all room controls match the share button. */
+#game #roomShareAgain,
+#game #roomRefresh,
+#game #rcopycode,
+#game #roomCodeCopy,
+#game #roomCodeInvite{
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:32px!important;
+  height:32px!important;
+  padding:0 10px!important;
+  margin:0!important;
+  border-radius:12px!important;
+  font:700 .68rem/1 Manrope,system-ui,sans-serif!important;
+  letter-spacing:0!important;
+  white-space:nowrap!important;
+  vertical-align:middle!important;
+  gap:4px!important;
+}
+#game #roomShareAgain,
+#game #roomRefresh,
+#game #rcopycode,
+#game #roomCodeCopy,
+#game #roomCodeInvite{
+  background:linear-gradient(135deg,#F4DDE8,#E6BED0)!important;
+  color:#795568!important;
+  border:1px solid #E2BDCE!important;
+  box-shadow:0 2px 7px rgba(145,83,111,.08)!important;
+}
+#game #roomShareAgain:before{content:none!important}
+#game #roomRefresh:before{content:none!important}
 </style>
