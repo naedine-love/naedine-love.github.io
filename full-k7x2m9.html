@@ -1241,6 +1241,7 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
   <h1>Колода для пар</h1>
   <p class="lead" id="lead2"></p>
   <section id="blockRoom" class="block-room">
+    <p id="roomAccessStatus" class="room-access-status" role="status" aria-live="polite" hidden></p>
     <div class="couple-overview" id="coupleOverview" aria-live="polite"><div class="overview-top"><span>♡ Ваш общий путь</span><strong id="overallCount">0 из 7 блоков</strong></div><div class="overview-track"><i id="overallFill"></i></div><p id="overviewNote">Каждый разговор — ещё один шаг навстречу.</p></div>
     <div class="block-room-intro"><span class="block-room-mark">♡</span><p class="eyebrow">ВАШЕ ПРОСТРАНСТВО ВДВОЁМ</p><h2>Выберите настроение вечера</h2><p>Каждый блок — отдельная тема для разговора. Начните с того, что откликается вам обоим.</p></div>
     <div class="block-heading"><strong>Все темы</strong><span>9 разделов · ваш общий путь</span></div>
@@ -1564,7 +1565,9 @@ function restoreTelegramAccess(){
     /* Show a safe diagnostic instead of silently leaving every block locked. */
     if(ROOM&&MODE==="room"){
       var code=String(error&&error.code||error&&error.message||"access_unknown").replace(/[^a-z0-9_/-]/gi,"").slice(0,48);
-      roomMsg("Доступ пары не восстановился. Причина: "+code+". Нажмите «Обновить» и проверьте подписку в боте.");
+      var status=el("roomAccessStatus");
+      if(status){status.hidden=false;status.textContent="Не удалось открыть полную версию. Код ошибки: "+code+". Нажмите «Обновить».";}
+      roomMsg("Не удалось восстановить доступ: "+code);
     }
   });
 }
@@ -2925,9 +2928,19 @@ answerGuess=async function(choice,button){
 #roomCodeModal h2#roomCodeTitle{font-size:32px!important;line-height:1.12!important;margin:0 0 8px!important}
 #roomCodeModal #roomCodeValue{display:block!important;width:100%!important;box-sizing:border-box!important;font-size:16px!important;line-height:1.25!important;font-weight:750!important;letter-spacing:.055em!important;padding:9px 12px!important;margin:0 0 7px!important}
 #roomCodeModal .modal-actions{display:flex!important;flex-direction:column!important;gap:9px!important}
-#roomCodeModal .modal-actions #roomCodeCopy{order:-1!important;width:100%!important;min-width:0!important;height:34px!important;min-height:34px!important;max-height:34px!important;padding:0 10px!important;margin:0!important;font-size:.68rem!important;line-height:1!important;box-sizing:border-box!important}
-#roomCodeModal .modal-actions #roomCodeInvite{order:0!important;width:100%!important}
-#roomCodeModal .modal-actions #roomCodeClose{order:1!important;width:100%!important}
+#roomCodeModal .modal-actions #roomCodeCopy,
+#roomCodeModal .modal-actions #roomCodeInvite,
+#roomCodeModal .modal-actions #roomCodeClose{
+  order:initial!important;display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;min-width:0!important;height:36px!important;min-height:36px!important;max-height:36px!important;
+  margin:0!important;padding:0 10px!important;box-sizing:border-box!important;
+  font:700 .68rem/1.1 Manrope,system-ui,sans-serif!important;border-radius:12px!important;
+}
+#roomCodeModal .modal-actions #roomCodeCopy{order:0!important}
+#roomCodeModal .modal-actions #roomCodeInvite{order:1!important}
+#roomCodeModal .modal-actions #roomCodeClose{order:2!important}
+.room-access-status{margin:0 0 14px;padding:11px 13px;border:1px solid #E8C8D5;border-radius:13px;background:#FFF4F7;color:#87566B;font-size:.82rem;line-height:1.45}
+.room-access-status[hidden]{display:none!important}
 
 /* Пространство пары: ежедневный вопрос, история, планы и письма */
 .couple-tools{margin:22px 0 8px;padding:18px;border:1px solid #EAD7DD;border-radius:24px;background:linear-gradient(145deg,#FFFBFA 0%,#F8EDF1 100%);box-shadow:0 8px 24px rgba(126,83,102,.07)}
