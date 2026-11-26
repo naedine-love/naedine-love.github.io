@@ -1724,7 +1724,7 @@ async function inviteToRoom(){
   inviteUrl.hash="";
   var site=inviteUrl.href;
   var message="Давай пройдём «Наедине» вместе ❤️\nЯ уже создал(а) нашу комнату!\n\nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗\n\n"+site+"\n\nКод комнаты на всякий случай: "+code;
-  var data={title:"Наедине — приглашение в нашу комнату",text:message,url:site};
+  var data={title:"Наедине — приглашение в нашу комнату",text:message};
   if(navigator.share){
     try{await navigator.share(data);el("roomCodeStatus").textContent="Приглашение готово к отправке 💗"}
     catch(e){if(e&&e.name!=="AbortError")el("roomCodeStatus").textContent="Не удалось открыть меню отправки. Скопируйте приглашение вручную."}
