@@ -2617,6 +2617,113 @@ authP.then(async function(){
     if(!snap.exists||members.indexOf(UID)<0)el("controw").style.display="none";
   }catch(e){console.warn("Saved room check failed:",e);}
 }).catch(function(){showLobby()});
+
+// ===== Naedine reliability & requested UX fixes (v2026-11-26) =====
+(function(){
+  // Reload preserves the active room; explicit invite links remain one-tap.
+  var navType="";try{navType=performance.getEntriesByType("navigation")[0].type}catch(e){}
+  var activeRoomReload=navType==="reload"&&sget("room");
+  var refreshBtn=document.createElement("button");refreshBtn.type="button";refreshBtn.id="roomRefresh";refreshBtn.className="link";refreshBtn.textContent="↻ Обновить";
+  var shareBtn=document.createElement("button");shareBtn.type="button";shareBtn.id="roomShareAgain";shareBtn.className="link";shareBtn.textContent="Поделиться комнатой";
+  var bar=el("roombar");if(bar){bar.appendChild(shareBtn);bar.appendChild(refreshBtn)}
+  refreshBtn.addEventListener("click",function(){if(ROOM){try{sessionStorage.setItem("naedine_reload_room",ROOM.id)}catch(e){}location.reload()}});
+  shareBtn.addEventListener("click",function(){if(ROOM){el("roomCodeValue").textContent=ROOM.id;inviteToRoom()}});
+  var originalInvite=inviteToRoom;
+  inviteToRoom=async function(){
+    var code=(ROOM&&ROOM.id)||((el("roomCodeValue")&&el("roomCodeValue").textContent)||"").trim();if(!code)return;
+    var site=location.origin+location.pathname+"?r="+encodeURIComponent(code);
+    var message="Давай продолжим наше «Наедине» ❤️\nОткрой ссылку — она сразу подключит тебя к нашей комнате:\n"+site;
+    try{if(navigator.share){await navigator.share({title:"Наша комната · Наедине",text:message,url:site});return}
+      await navigator.clipboard.writeText(site);roomMsg("Короткая ссылка на комнату скопирована 💗")
+    }catch(e){if(e&&e.name!=="AbortError"){try{prompt("Скопируйте ссылку на комнату",site)}catch(ignore){}}}
+  };
+  // The new short parameter is accepted alongside old links.
+  var originalJoin=joinRoomByCode;
+  joinRoomByCode=async function(code){return originalJoin(code)};
+  // Remove the discontinued secret letters feature from navigation.
+  document.querySelectorAll('[data-couple-open="letters"]').forEach(function(n){n.remove()});
+  var oldOpen=openCouplePanel;
+  openCouplePanel=function(kind){if(kind==="letters")return;return oldOpen(kind)};
+  // Persist the visited-question set for the active block, so the finish screen
+  // only lists cards that were actually shown and skipped in this session.
+  function visitKey(){return "naedine_seen_"+(MODE==="room"&&ROOM?ROOM.id:"local")+"_"+blk}
+  var originalDraw=draw;
+  draw=function(dir){
+    if(i<list.length&&list[i]&&!list[i].bridge&&!list[i].intro){try{var k=visitKey(),v=JSON.parse(localStorage.getItem(k)||"[]");if(!Array.isArray(v))v=[];if(v.indexOf(list[i].id)<0)v.push(list[i].id);localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+    return originalDraw(dir)
+  };
+  missingAnswers=function(block){
+    var seen=[];try{seen=JSON.parse(localStorage.getItem("naedine_seen_"+(MODE==="room"&&ROOM?ROOM.id:"local")+"_"+block)||"[]")}catch(e){}
+    return B[block].map(function(q,id){return id}).filter(function(id){return seen.indexOf(id)>=0&&!String(sget("R"+block+"_"+id+"_1")||"").trim()});
+  };
+  // Make daily-save state visible after the server confirms the save.
+  var originalDaily=renderDailyPanel;
+  renderDailyPanel=function(){
+    var html=originalDaily();if(COUPLE_STATE&&COUPLE_STATE.daily&&COUPLE_STATE.daily.mine&&COUPLE_STATE.daily.mine.answer){
+      html=html.replace('>Сохранить ответ ♡</button>','>Ответ сохранён ✓</button>');
+    }return html;
+  };
+  var originalSaveDaily=saveDailyAnswer;
+  saveDailyAnswer=async function(form){
+    var button=form.querySelector('button[type="submit"]');
+    await originalSaveDaily(form);
+    if(COUPLE_STATE&&COUPLE_STATE.daily&&COUPLE_STATE.daily.mine&&COUPLE_STATE.daily.mine.answer&&button){button.textContent="Ответ сохранён ✓";button.disabled=true}
+  };
+  // Results combine current device cache with the durable couple history returned by the API.
+  var originalRenderResults=renderResults;
+  renderResults=function(){
+    if(MODE==="room"&&COUPLE_STATE&&Array.isArray(COUPLE_STATE.history)){
+      COUPLE_STATE.history.forEach(function(h){
+        if(!h||!h.answers||!h.answers[UID]||!h.answers[COUPLE_STATE.partnerUid])return;
+        var block=Number(h.block);if(!B[block])return;
+        B[block].forEach(function(q,id){
+          var a1=h.answers[UID][id]||"",a2=h.answers[COUPLE_STATE.partnerUid][id]||"";
+          if(a1)sset("R"+block+"_"+id+"_1",a1);if(a2)sset("R"+block+"_"+id+"_2",a2);
+        });REV[block]=true;
+      });
+    }
+    return originalRenderResults();
+  };
+  // Truth-or-dare is now a pass-the-phone activity: no room/partner required.
+  var soloTurn=1,soloCard=null,soloUsed=[];
+  function renderSoloTruth(){
+    var box=el("couplePanelContent");
+    if(!soloCard){
+      box.innerHTML='<p class="couple-panel-lead">Играйте на одном телефоне: вытягивайте карточку по очереди и передавайте телефон следующему.</p><div class="truth-category"><b>Правда</b><div><button type="button" data-solo-truth="truth">Вытянуть</button></div></div><div class="truth-category"><b>Действие</b><div><button type="button" data-solo-truth="action">Вытянуть</button></div></div><p class="couple-status">Сейчас ходит участник '+soloTurn+'</p>';
+      return;
+    }
+    box.innerHTML='<div class="intimate-card"><span class="eyebrow">ХОД УЧАСТНИКА '+soloTurn+'</span><div class="intimate-card-symbol">♡</div><h3>'+(soloCard.kind==="truth"?"Правда":"Действие")+'</h3><p>'+coupleEscape(soloCard.prompt)+'</p></div><button class="btn main" type="button" id="soloNextTurn">Передать телефон · ход '+(soloTurn===1?2:1)+'</button><button class="btn secondary" type="button" id="soloDrawAgain">Другая карточка</button>';
+  }
+  var originalRenderPanel=renderCouplePanel;
+  renderCouplePanel=function(){if(couplePanelOpen==="truthSolo"){renderSoloTruth();return}return originalRenderPanel()};
+  var originalPanelOpen=openCouplePanel;
+  openCouplePanel=function(kind){if(kind==="truthSolo"){couplePanelOpen=kind;el("couplePanel").hidden=false;el("couplePanelTitle").textContent="Правда или действие · один телефон";renderSoloTruth();el("couplePanel").scrollIntoView({behavior:"smooth",block:"start"});return}return originalPanelOpen(kind)};
+  // Short invite URL + refresh restore support.
+  var originalInitialJoin=joinRoomByCode;
+  var initialUrlRoom="";try{var params=new URLSearchParams(location.search);initialUrlRoom=params.get("r")||params.get("room")||""}catch(e){}
+  if(bar){var roomLabel=el("rshow");if(roomLabel)roomLabel.setAttribute("aria-label","Код вашей комнаты")}
+  document.addEventListener("click",function(e){
+    var b=e.target.closest&&e.target.closest("[data-solo-truth]");
+    if(b){var kind=b.getAttribute("data-solo-truth"),pool=[];Object.keys(TRUTH_PROMPTS).forEach(function(cat){(TRUTH_PROMPTS[cat][kind]||[]).forEach(function(p){pool.push({category:cat,kind:kind,prompt:p})})});pool=pool.filter(function(x){return soloUsed.indexOf(x.prompt)<0});if(!pool.length)soloUsed=[];soloCard=pool[Math.floor(Math.random()*pool.length)];soloUsed.push(soloCard.prompt);renderSoloTruth()}
+    if(e.target.id==="soloNextTurn"){soloTurn=soloTurn===1?2:1;soloCard=null;renderSoloTruth()}
+    if(e.target.id==="soloDrawAgain"){soloCard=null;renderSoloTruth()}
+  },true);
+  // Allow the one-phone game entry from the existing game category.
+  var gameLinks=document.querySelector('[data-couple-category-content="games"]');
+  if(gameLinks){var one=document.createElement("button");one.type="button";one.setAttribute("data-couple-open","truthSolo");one.textContent="📱 Правда или действие · один телефон";gameLinks.appendChild(one)}
+  // Restore directly into room on explicit room link or browser refresh.
+  var originalShowLobby=showLobby;
+  showLobby=function(){return originalShowLobby()};
+  var roomQuery=initialUrlRoom;
+  if(roomQuery){try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}}
+  authP.then(async function(){
+    if(roomQuery){await originalInitialJoin(roomQuery);return}
+    if(activeRoomReload){await originalInitialJoin(activeRoomReload);return}
+    try{var flagged=sessionStorage.getItem("naedine_reload_room");if(flagged){sessionStorage.removeItem("naedine_reload_room");await originalInitialJoin(flagged)}}catch(e){}
+  }).catch(function(){});
+  // Room code/share buttons stay available after modal has been dismissed.
+  if(el("roomCodeModal")){var status=el("roomCodeStatus");if(status)status.setAttribute("aria-live","polite")}
+})();
 </script>
 
 
