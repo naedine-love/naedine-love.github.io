@@ -446,84 +446,62 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
 /* Совместимость с уже выданным доступом: при каждом восстановлении подписка проверяется заново. */
 app.post("/api/telegram/access", async (req, res) => {
   if (!requireConfig(res)) return;
-  const user = await firebaseUser(req, res);
-  if (!user) return;
-  const deviceKey = String(req.body && req.body.deviceKey || "");
-  const deviceKeyHash = /^[a-f0-9]{64}$/i.test(deviceKey) ? sha256(deviceKey) : null;
-  try {
-    const db = admin.firestore();
-    /* Full access can be shared only with the authenticated second member
-       of the same two-person room. Re-check the original subscriber live. */
-    const roomSnap = await db.collection("rooms").where("members", "array-contains", user.uid).limit(5).get();
-    let verifiedRoomPartner = null;
-    for (const roomDoc of roomSnap.docs) {
-      const members = Array.isArray(roomDoc.data().members) ? roomDoc.data().members : [];
-      if (members.length !== 2 || !members.includes(user.uid)) continue;
-      const partnerUid = members.find(uid => uid !== user.uid);
-      if (!partnerUid) continue;
-      const partnerEntSnap = await entitlementRef(partnerUid).get();
-      if (!partnerEntSnap.exists || partnerEntSnap.data().active !== true) continue;
-      const partnerTelegramSnap = await privateTelegramRef(partnerUid).get();
-      const partnerTelegramId = partnerTelegramSnap.exists ? String(partnerTelegramSnap.data().telegramId || "") : "";
-      if (!partnerTelegramId) continue;
-      if (await getMembership(partnerTelegramId)) {
-        verifiedRoomPartner = { uid: partnerUid, telegramId: partnerTelegramId, roomId: roomDoc.id };
-        break;
+  const user = await firebaseUser(req, res); if (!user) return;
+  const deviceKey=String(req.body&&req.body.deviceKey||""),deviceKeyHash=/^[a-f0-9]{64}$/i.test(deviceKey)?sha256(deviceKey):null;
+  const roomCode=String(req.body&&req.body.roomCode||"").trim().toUpperCase();
+  try{
+    const db=admin.firestore();
+    // Fast path: verify the current user's own entitlement first. This avoids
+    // searching all rooms and calling Telegram for unrelated room members.
+    const [ownEnt,ownTelegram]=await Promise.all([entitlementRef(user.uid).get(),privateTelegramRef(user.uid).get()]);
+    if(ownEnt.exists&&ownEnt.data().active===true&&!ownEnt.data().sharedFromRoom&&ownTelegram.exists&&ownTelegram.data().telegramId){
+      if(await getMembership(String(ownTelegram.data().telegramId))){
+        await entitlementRef(user.uid).set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+        if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({telegramId:String(ownTelegram.data().telegramId),active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+        return res.json({ok:true,access:"subscriber",blocks:questions});
+      }
+      await entitlementRef(user.uid).delete().catch(()=>{});
+    }
+    // A room invite passes the room code so we can inspect exactly that pair
+    // rather than query up to five rooms and re-check irrelevant Telegram users.
+    let roomDocs=[];
+    if(/^[A-HJ-NP-Z2-9]{4}(?:-[A-HJ-NP-Z2-9]{4}){2}$/.test(roomCode)){
+      const snap=await db.collection("rooms").doc(roomCode).get();
+      if(snap.exists&&(snap.data().members||[]).includes(user.uid))roomDocs=[snap];
+    }else{
+      const snap=await db.collection("rooms").where("members","array-contains",user.uid).limit(5).get();roomDocs=snap.docs;
+    }
+    for(const roomDoc of roomDocs){
+      const members=Array.isArray(roomDoc.data().members)?roomDoc.data().members:[];
+      if(members.length!==2||!members.includes(user.uid))continue;
+      const partnerUid=members.find(uid=>uid!==user.uid);if(!partnerUid)continue;
+      const partnerEnt=await entitlementRef(partnerUid).get();
+      if(!partnerEnt.exists||partnerEnt.data().active!==true)continue;
+      const partnerTelegram=await privateTelegramRef(partnerUid).get();
+      const telegramId=partnerTelegram.exists?String(partnerTelegram.data().telegramId||""):"";
+      if(!telegramId||!await getMembership(telegramId))continue;
+      await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,sharedFromRoom:roomDoc.id,sharedFromUid:partnerUid,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      return res.json({ok:true,access:"couple",blocks:questions});
+    }
+    const previous=await entitlementRef(user.uid).get();
+    if(previous.exists&&previous.data().sharedFromRoom)await entitlementRef(user.uid).delete().catch(()=>{});
+    if(deviceKeyHash){
+      const deviceRef=db.collection("deviceEntitlements").doc(deviceKeyHash),device=await deviceRef.get();
+      if(device.exists&&device.data().active&&device.data().telegramId){
+        if(!await getMembership(device.data().telegramId)){await deviceRef.delete().catch(()=>{});return sendError(res,403,"not_subscribed","Подписка на канал «Наедине» не найдена.");}
+        await deviceRef.set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+        return res.json({ok:true,blocks:questions});
       }
     }
-    if (verifiedRoomPartner) {
-      await entitlementRef(user.uid).set({
-        active: true, channel: CHANNEL_ID,
-        sharedFromRoom: verifiedRoomPartner.roomId,
-        sharedFromUid: verifiedRoomPartner.uid,
-        checkedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-      return res.json({ ok: true, access: "couple", blocks: questions });
-    }
-    /* A previous couple grant is revoked when no current subscribed member
-       remains in the linked room. */
-    const previousEntitlement = await entitlementRef(user.uid).get();
-    if (previousEntitlement.exists && previousEntitlement.data().sharedFromRoom) {
-      await entitlementRef(user.uid).delete().catch(() => {});
-    }
-    if (deviceKeyHash) {
-      const deviceRef = db.collection("deviceEntitlements").doc(deviceKeyHash);
-      const deviceSnap = await deviceRef.get();
-      if (deviceSnap.exists && deviceSnap.data().active && deviceSnap.data().telegramId) {
-        const subscribed = await getMembership(deviceSnap.data().telegramId);
-        if (!subscribed) {
-          await deviceRef.delete().catch(() => {});
-          return sendError(res, 403, "not_subscribed", "Подписка на канал «Наедине» не найдена.");
-        }
-        await deviceRef.set({ checkedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-        return res.json({ ok: true, blocks: questions });
-      }
-    }
-    const linked = await privateTelegramRef(user.uid).get();
-    if (!linked.exists || !linked.data().telegramId) {
-      await entitlementRef(user.uid).delete().catch(() => {});
-      return sendError(res, 403, "telegram_not_linked", "Сначала подтвердите подписку через бота.");
-    }
-    const telegramId = linked.data().telegramId;
-    const subscribed = await getMembership(telegramId);
-    if (!subscribed) {
-      await entitlementRef(user.uid).delete().catch(() => {});
-      if (deviceKeyHash) await db.collection("deviceEntitlements").doc(deviceKeyHash).delete().catch(() => {});
-      return sendError(res, 403, "not_subscribed", "Подписка на канал «Наедине» не найдена.");
-    }
-    await entitlementRef(user.uid).set({ active: true, channel: CHANNEL_ID, checkedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
-    if (deviceKeyHash) {
-      await db.collection("deviceEntitlements").doc(deviceKeyHash).set({
-        telegramId: String(telegramId), active: true, channel: CHANNEL_ID,
-        checkedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
-    }
-    return res.json({ ok: true, blocks: questions });
-  } catch (error) {
-    return sendError(res, error.code === "bot_not_admin" ? 503 : 502, error.code || "telegram_api_error", error.message);
-  }
+    const linked=await privateTelegramRef(user.uid).get();
+    if(!linked.exists||!linked.data().telegramId){await entitlementRef(user.uid).delete().catch(()=>{});return sendError(res,403,"telegram_not_linked","Сначала подтвердите подписку через бота.");}
+    const telegramId=String(linked.data().telegramId);
+    if(!await getMembership(telegramId)){await entitlementRef(user.uid).delete().catch(()=>{});if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).delete().catch(()=>{});return sendError(res,403,"not_subscribed","Подписка на канал «Наедине» не найдена.");}
+    await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({telegramId,active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    return res.json({ok:true,blocks:questions});
+  }catch(error){return sendError(res,error.code==="bot_not_admin"?503:502,error.code||"telegram_api_error",error.message);}
 });
-
 
 const COUPLE_IDEAS = new Set([
   "phone-free-evening","cook-together","sunset-walk","dream-trip","first-date-replay",
