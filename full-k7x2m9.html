@@ -1058,6 +1058,63 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 #roomCodeModal #roomCodeCopy{order:0!important;margin-top:0!important;min-height:50px!important}
 #roomCodeModal #roomCodeInvite{order:1!important}
 #roomCodeModal #roomCodeClose{order:2!important}
+
+/* Mobile spacing and contained couple panels */
+#couplePanel{
+  max-height:min(74svh,760px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scroll-padding-top:10px;
+  -webkit-overflow-scrolling:touch;
+}
+.couple-panel-head{
+  position:sticky;
+  top:-13px;
+  z-index:3;
+  margin:-3px 0 12px;
+  padding:5px 0 9px;
+  background:#FFFEFD;
+}
+#couplePanelContent{display:grid;gap:14px;min-width:0}
+#couplePanelContent>.couple-form{margin:0}
+#couplePanelContent>.couple-panel-lead{margin:0}
+#surpriseDateIdea{
+  display:block;
+  width:min(100%,260px);
+  min-height:48px;
+  margin:0 0 2px;
+}
+#couplePanelContent>.daily-question-card{margin:0}
+.date-idea-list{gap:12px}
+.date-idea{
+  display:block;
+  min-width:0;
+  padding:14px;
+}
+.date-idea>div{width:100%;min-width:0}
+.date-idea b{display:block;line-height:1.35}
+.date-idea p{margin:6px 0 8px;line-height:1.5}
+.idea-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+.idea-actions .idea-toggle{
+  width:100%;
+  max-width:none;
+  min-width:0;
+  min-height:42px;
+  padding:9px 7px;
+  line-height:1.25;
+  white-space:normal;
+}
+@media(max-width:380px){
+  #couplePanel{max-height:70svh}
+  .couple-panel-head{top:-11px}
+  .idea-actions{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -2141,7 +2198,7 @@ function renderComplimentPanel(){
   /* Комплимент можно отправить заранее, даже если партнёр ещё не присоединился. */
   var mine=c.mine?'<div class="daily-reveal"><b>Ваш комплимент отправлен ♡</b><p>'+coupleEscape(c.mine)+'</p></div>':'<form id="complimentForm" class="couple-form"><label for="complimentText">Что тебе особенно нравится в партнёре?</label><textarea id="complimentText" rows="3" maxlength="500" required placeholder="Напиши что-нибудь от сердца…"></textarea><button class="btn main" type="submit">Отправить комплимент</button><p class="couple-status" id="coupleActionStatus"></p></form>';
   var partner=c.bothSent?'<div class="daily-reveal"><b>Комплимент от партнёра</b><p>'+coupleEscape(c.partnerText)+'</p></div>':(c.partnerSent?'<p class="couple-wait">Партнёр уже отправил комплимент. Ваш откроется, когда вы тоже отправите свой.</p>':'<p class="couple-wait">Комплимент партнёра пока скрыт. Вы увидите его, когда отправите оба.</p>');
-  return '<p class="couple-panel-lead">Оставьте тёплые слова в удобное время. Не нужно ждать, пока партнёр зайдёт в комнату. Комплименты откроются, когда вы оба отправите свои.</p>'+mine+partner;
+  return '<p class="couple-panel-lead">Можно отправить комплимент, даже если вы пока в комнате одни. Он сохранится здесь, а партнёр увидит его после присоединения. Ваши комплименты откроются друг другу, когда вы оба отправите свои.</p>'+mine+partner;
 }
 function renderGuessPanel(){
   if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
