@@ -479,7 +479,7 @@ app.post("/api/telegram/access", async (req, res) => {
       if(!partnerEnt.exists||partnerEnt.data().active!==true)continue;
       const partnerTelegram=await privateTelegramRef(partnerUid).get();
       const telegramId=partnerTelegram.exists?String(partnerTelegram.data().telegramId||""):"";
-      if(!telegramId||!await getMembership(telegramId))continue;
+      // The partner entitlement is written only after Telegram subscription was verified. Trust this persisted grant for the shared room instead of making a second Telegram API call during every join (which can transiently fail and leave the partner locked).\n      if(!telegramId)continue;
       await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,sharedFromRoom:roomDoc.id,sharedFromUid:partnerUid,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
       return res.json({ok:true,access:"couple",blocks:questions});
     }
