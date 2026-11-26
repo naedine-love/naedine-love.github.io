@@ -1482,12 +1482,12 @@ try{if(typeof firebase!=="undefined"){
 }}catch(e){}
 /* Warm restore from the last successful entitlement response to avoid a paywall flash.
    The server revalidates the subscription immediately after Firebase auth. */
-try{var cachedQuestions=JSON.parse(localStorage.getItem("kp_cached_protected_questions")||"null");if(cachedQuestions&&[3,4,5,6,7].every(function(n){return Array.isArray(cachedQuestions[n])&&cachedQuestions[n].length===15})){[3,4,5,6,7].forEach(function(n){B[n]=cachedQuestions[n]});FULL=true;BLOCKS=[1,2,3,4,5,6,7];updateOverview();chips()}}catch(e){}
+try{var cachedQuestions=JSON.parse(localStorage.getItem("kp_cached_protected_questions")||"null");if(cachedQuestions&&[3,4,5,6,7].every(function(n){return Array.isArray(cachedQuestions[n])&&cachedQuestions[n].length>0})){[3,4,5,6,7].forEach(function(n){B[n]=cachedQuestions[n]});FULL=true;BLOCKS=[1,2,3,4,5,6,7];updateOverview();chips()}}catch(e){}
 function applyTelegramAccess(data){
   var blocks=data&&data.blocks||{};
-  [3,4,5,6,7].forEach(function(n){if(Array.isArray(blocks[n])&&blocks[n].length===15)B[n]=blocks[n]});
+  [3,4,5,6,7].forEach(function(n){if(Array.isArray(blocks[n])&&blocks[n].length>0)B[n]=blocks[n]});
   try{localStorage.setItem("kp_cached_protected_questions",JSON.stringify(blocks))}catch(e){}
-  if([3,4,5,6,7].some(function(n){return !Array.isArray(B[n])||B[n].length!==15}))throw new Error("invalid_questions");
+  if([3,4,5,6,7].some(function(n){return !Array.isArray(B[n])||B[n].length===0}))throw new Error("protected_questions_missing");
   FULL=true;BLOCKS=[1,2,3,4,5,6,7];
   try{localStorage.setItem("kp_full_access","1")}catch(e){}
   updateOverview();chips();
@@ -2897,6 +2897,12 @@ answerGuess=async function(choice,button){
 })();
 </script>
 
+<style id="naedine-room-buttons-match-share-v13">
+#game #roomRefresh,#game #roomShareAgain,#game #rcopycode,#game #roomCodeCopy,#game #roomCodeInvite{min-height:31px!important;height:auto!important;padding:6px 9px!important;border-radius:12px!important;font-size:.66rem!important;line-height:1.15!important;gap:4px!important;box-shadow:0 2px 7px rgba(145,83,111,.08)!important;text-decoration:none!important}
+#game #roomRefresh,#game #rcopycode{background:linear-gradient(135deg,#F4DDE8,#E6BED0)!important;color:#795568!important;border:1px solid #E2BDCE!important}
+#game #roomShareAgain,#game #roomCodeCopy,#game #roomCodeInvite{background:linear-gradient(135deg,#F4DDE8,#E6BED0)!important;color:#795568!important;border:1px solid #E2BDCE!important}
+#game #roomRefresh:disabled{opacity:.7}
+</style>
 </body>
 </html>
 <style id="results-and-answered-queue-fix">
