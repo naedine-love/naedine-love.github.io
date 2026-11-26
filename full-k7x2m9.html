@@ -2576,6 +2576,63 @@ authP.then(async function(){
   }catch(e){console.warn("Saved room check failed:",e);}
 }).catch(function(){showLobby()});
 </script>
+
+<style id="pact-results-visual-refresh-20261126">
+/* Отдельный характер для договорённостей: личный блок пары, не продолжение анкеты */
+#pact{
+  margin:18px 0 8px;padding:21px 16px 18px;border:1px solid #DCE7DD;border-radius:25px;
+  background:radial-gradient(circle at 100% 0,rgba(218,235,220,.78),transparent 38%),linear-gradient(150deg,#F8FBF6 0%,#EFF5EE 100%);
+  box-shadow:0 9px 24px rgba(66,101,79,.075);position:relative;overflow:hidden
+}
+#pact:before{content:"♡";position:absolute;right:13px;top:8px;font:4.3rem Georgia,serif;color:rgba(91,137,105,.12);pointer-events:none}
+#pact h2{position:relative;color:#416B55;font-size:1.48rem;margin:0 0 7px}
+#pact>.lead{position:relative;color:#758A78;font-size:.84rem;line-height:1.5;margin:0 0 17px;max-width:36ch}
+#pact label{position:relative;margin:13px 0 0;padding:12px 13px 7px;border:1px solid #DCE8DD;border-bottom:0;border-radius:15px 15px 0 0;background:rgba(255,255,255,.76);color:#55745E;font-size:.82rem;font-weight:800;line-height:1.35}
+#pact textarea,#pact input{position:relative;border:1px solid #DCE8DD;border-top:0;border-radius:0 0 15px 15px;background:rgba(255,255,255,.9);color:#405B48;padding:10px 13px;font-size:.9rem;line-height:1.5;box-shadow:none}
+#pact textarea{min-height:88px;margin:0;resize:vertical}
+#pact textarea:focus-visible,#pact input:focus-visible{outline:2px solid #9DBDA3;outline-offset:2px}
+#pact .lbl{color:#55745E;margin-top:18px}
+#pact .names input{border:1px solid #DCE8DD;border-radius:13px;background:#fff;padding:12px}
+#pact .prow{display:grid;grid-template-columns:.8fr 1.2fr;gap:9px;margin-top:18px}
+#pact .prow .btn{min-width:0;min-height:48px;border-radius:15px;font-size:.82rem}
+#pact .prow .btn:first-child{background:#F8FBF7;border:1px solid #D6E3D7;color:#66816B;box-shadow:none}
+#pact .prow .btn.main{background:linear-gradient(120deg,#638B6D,#4D765B);border-color:#4D765B}
+#pact #pmsg{min-height:18px;margin:10px 0 0;color:#6E8B72;font-size:.76rem}
+/* Ответы — спокойный архив ваших разговоров */
+#res{
+  margin:18px 0 8px;padding:20px 15px 18px;border:1px solid #E1DCEB;border-radius:25px;
+  background:radial-gradient(circle at 0 0,rgba(229,222,242,.72),transparent 38%),linear-gradient(150deg,#FAF9FD 0%,#F2F0F8 100%);
+  box-shadow:0 9px 24px rgba(91,79,119,.07)
+}
+#res h2{color:#625778;font-size:1.48rem;margin:0 0 6px}
+#res>.lead{color:#89839A;font-size:.84rem;line-height:1.5;margin-bottom:15px}
+#res .results-intro{border:1px solid #E3DDED;border-radius:18px;background:linear-gradient(125deg,#F0ECF7,#FBF9FD);padding:15px;margin:12px 0 17px;color:#77718A}
+#res .results-intro strong{color:#625778;font-family:"Lora",Georgia,serif;font-size:1.08rem}
+#res .results-block{border:1px solid #E4DFEC;border-radius:17px;background:rgba(255,255,255,.7);box-shadow:0 4px 12px rgba(88,75,112,.045);margin:10px 0;overflow:hidden}
+#reslist .results-block-toggle{min-height:56px;padding:14px 15px;background:linear-gradient(120deg,#F0ECF7,#EAE7F2)!important;color:#625778!important;font-size:.88rem}
+#reslist .results-block-toggle:after{border-color:#9385AB}
+#reslist .results-block-content{padding:4px 10px 10px}
+#reslist .results-block-content .ri{border:1px solid #ECE8F1;border-radius:14px;background:#fff;padding:13px;margin:9px 0;box-shadow:0 3px 10px rgba(91,79,119,.035)}
+#reslist .ri .rq{color:#625778;font-size:1rem;line-height:1.45}
+#reslist .ri p:not(.rq){border-top:1px solid #F0EDF4;color:#53675A;font-size:.84rem;line-height:1.5}
+#reslist .ri .rn{color:#9A7FAF}
+#res .prow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+#res .prow .btn{min-height:48px;border-radius:15px;font-size:.82rem}
+#res .prow .btn:first-child{background:#fff;border:1px solid #E1DCEB;color:#746B88;box-shadow:none}
+#res .prow .btn.main{background:linear-gradient(120deg,#82739C,#6E608A);border-color:#6E608A}
+#res #rmsg{min-height:18px;color:#827A94;font-size:.76rem;margin:10px 0}
+/* Мягкое перелистывание карточки — короткое, без задержки управления */
+#game .card{transform-style:preserve-3d;backface-visibility:hidden}
+#game .card.swap{animation:naedine-card-turn .32s cubic-bezier(.2,.72,.25,1) both}
+@keyframes naedine-card-turn{
+  0%{opacity:.25;transform:perspective(900px) translateX(var(--dx,16px)) rotateY(calc(var(--dx,16px)*.22)) translateY(5px) scale(.985);filter:blur(1.5px)}
+  65%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:perspective(900px) translateX(0) rotateY(0) translateY(0) scale(1);filter:none}
+}
+@media(max-width:380px){#pact,#res{padding:17px 12px}#pact .prow{grid-template-columns:1fr}#res .prow{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){#game .card.swap{animation:none!important}}
+</style>
+
 </body>
 </html>
 <style id="results-and-answered-queue-fix">
