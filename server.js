@@ -625,8 +625,9 @@ app.post("/api/couple/sync", async (req, res) => {
     const bothDaily = !!(mineDaily && partnerDaily);
     const ideas = ideasSnap.docs.map(doc => {
       const d = doc.data() || {};
-      return { id: doc.id, doneBy: Array.isArray(d.doneBy) ? d.doneBy : [], wantBy: Array.isArray(d.wantBy) ? d.wantBy : [], updatedAt: Number(d.updatedAt || 0) };
+      return { id: doc.id, doneBy: Array.isArray(d.doneBy) ? d.doneBy : [], wantBy: Array.isArray(d.wantBy) ? d.wantBy : [], updatedAt: Number(d.updatedAt || 0), title: String(d.title || ""), description: String(d.description || ""), custom: d.custom === true, createdBy: String(d.createdBy || "") };
     });
+    const customIdeas = ideas.filter(item => item.custom).map(item => ({id:item.id,title:item.title,description:item.description,createdBy:item.createdBy,doneBy:item.doneBy,wantBy:item.wantBy,updatedAt:item.updatedAt}));
     const letters = lettersSnap.docs.map(doc => {
       const d = doc.data() || {};
       if (d.fromUid !== ctx.user.uid && d.toUid !== ctx.user.uid) return null;
@@ -685,7 +686,7 @@ app.post("/api/couple/sync", async (req, res) => {
         bothAnswered: bothDaily,
         partnerAnswer: bothDaily ? String(partnerDaily.answer || "") : ""
       },
-      ideas, letters, notifications, history,
+      ideas, customIdeas, letters, notifications, history,
       coupleMemories: memoriesSnap.docs.map(doc => {
         const d = doc.data() || {};
         return { id: doc.id, title: String(d.title || ""), date: String(d.date || ""),
@@ -767,6 +768,18 @@ app.post("/api/couple/idea/toggle", async (req, res) => {
     console.error("Date idea update failed:", error.message);
     return sendError(res, 503, "idea_update_failed", "Не удалось обновить идею.");
   }
+});
+app.post("/api/couple/idea/add", async (req,res)=>{
+  if(!requireFirebaseReady(res))return;
+  const ctx=await coupleContext(req,res);if(!ctx)return;
+  const title=String(req.body&&req.body.title||"").trim(),description=String(req.body&&req.body.description||"").trim();
+  if(title.length<3||title.length>100||description.length>500)return sendError(res,400,"invalid_custom_idea","Название — от 3 до 100 символов, описание — до 500.");
+  try{
+    const id="custom_"+crypto.randomUUID().replace(/-/g,"");
+    await ctx.roomRef.collection("ideas").doc(id).set({id,custom:true,title,description,createdBy:ctx.user.uid,doneBy:[],wantBy:[],createdAt:Date.now(),updatedAt:Date.now()});
+    await addCoupleActivity(ctx,{type:"custom_idea",title:"Партнёр добавил вашу идею"});
+    return res.json({ok:true,id});
+  }catch(error){console.error("Custom couple idea failed:",error.message);return sendError(res,503,"custom_idea_failed","Не удалось сохранить идею.")}
 });
 app.post("/api/couple/letter/send", async (req, res) => {
   if (!requireFirebaseReady(res)) return;
