@@ -2248,7 +2248,7 @@ function renderTruthPanel(){
   if(!mine)return '<div class="couple-wait">Сейчас ход партнёра. Когда он вытянет карточку и завершит ход, очередь перейдёт к вам.</div>'+history;
   var games=[["spark","❤️","Искра между нами","Нежность и романтика"],["seduce","✨","Соблазни меня","Флирт и игривые задания"],["secret","💌","Секретные желания","Бережные откровенные разговоры"],["touch","🤍","Прикосновения","Нежность и расслабление"],["adult","🔥","Только для нас · 18+","Для взрослых пар; только по взаимному желанию"]];
   var cards=games.map(function(c){return '<article class="intimate-game-card"><div class="intimate-game-icon">'+c[1]+'</div><div class="intimate-game-copy"><b>'+c[2]+'</b><small>'+c[3]+'</small></div><div class="intimate-game-actions"><button type="button" data-truth-choice="'+c[0]+'|truth">Вопрос</button><button type="button" data-truth-choice="'+c[0]+'|action">Задание</button></div></article>'}).join('');
-  return '<p class="couple-panel-lead">Выберите колоду, затем вытяните карточку. Ходы чередуются между вами. Любой вопрос можно оставить без ответа, а любое задание — пропустить.</p><div class="intimate-consent-note">♡ Играйте только в том, что комфортно обоим. Для колоды 18+ каждый участник отдельно подтверждает, что ему есть 18 лет и он хочет играть.</div><div class="intimate-game-list">'+cards+'</div><h4 class="couple-subheading">Недавно вытянутые карточки</h4>'+(history||'<p class="couple-empty">Здесь появятся ваши общие игровые моменты.</p>');
+  return '<p class="couple-panel-lead">Выберите колоду, затем вытяните карточку. Ходы чередуются между вами. Любой вопрос можно оставить без ответа, а любое задание — пропустить.</p><div class="intimate-consent-note">♡ Играйте только в том, что комфортно обоим. Перед каждым входом в колоду 18+ участник подтверждает возраст и своё желание продолжить.</div><div class="intimate-game-list">'+cards+'</div><h4 class="couple-subheading">Недавно вытянутые карточки</h4>'+(history||'<p class="couple-empty">Здесь появятся ваши общие игровые моменты.</p>');
 }
 function renderDatesPanel(){
   var dates=COUPLE_STATE.coupleDates||[],today=coupleDateKey();
@@ -2330,6 +2330,7 @@ async function answerGuess(choice,button){
   finally{if(button)button.disabled=false}
 }
 async function chooseTruthPrompt(category,kind){
+  if(category==="adult"&&!window.confirm("Мне есть 18 лет, и я добровольно хочу открыть эту колоду."))return;
   var options=(TRUTH_PROMPTS[category]||{})[kind]||[];
   if(!options.length)return;
   var prompt=options[Math.floor(Math.random()*options.length)];
