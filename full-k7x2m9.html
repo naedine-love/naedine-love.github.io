@@ -2678,6 +2678,11 @@ authP.then(async function(){
   // Results combine current device cache with the durable couple history returned by the API.
   var originalRenderResults=renderResults;
   renderResults=function(){
+    if(MODE==="room"&&!COUPLE_STATE){
+      var box=el("reslist");if(box)box.innerHTML='<p class="couple-loading">Загружаем сохранённые ответы…</p>';
+      syncCoupleData(false).then(function(){if(COUPLE_STATE)originalRenderResults();else setTimeout(function(){if(blk===9)renderResults()},900)});
+      return;
+    }
     if(MODE==="room"&&COUPLE_STATE&&Array.isArray(COUPLE_STATE.history)){
       COUPLE_STATE.history.forEach(function(h){
         if(!h||!h.answers||!h.answers[UID]||!h.answers[COUPLE_STATE.partnerUid])return;
