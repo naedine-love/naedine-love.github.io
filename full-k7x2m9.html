@@ -2837,6 +2837,37 @@ answerGuess=async function(choice,button){
 })();
 </script>
 
+<script id="naedine-room-refresh-share-v10">
+(function(){
+  // Refresh only the room data: do not reload the document / bounce to the lobby.
+  var rb=document.getElementById("roomRefresh");
+  if(rb){var fresh=rb.cloneNode(true);rb.parentNode.replaceChild(fresh,rb);fresh.addEventListener("click",async function(){
+    var code=ROOM&&ROOM.id;if(!code)return;
+    fresh.disabled=true;fresh.textContent="↻ Обновляем…";
+    try{
+      await withTimeout(authP,12000,"auth-timeout");
+      var snap=await withTimeout(db.collection("rooms").doc(code).get(),12000,"firestore-timeout");
+      if(!snap.exists||!(snap.data().members||[]).includes(UID)){roomMsg("Комната больше недоступна.");return}
+      enterRoom(code);showBlockRoom();await restoreTelegramAccess();roomMsg("Комната обновлена 💗");
+    }catch(e){roomMsg(errText(e)||"Не удалось обновить комнату.")}
+    finally{fresh.disabled=false;fresh.textContent="↻ Обновить"}
+  });}
+  // Share the requested, readable invitation format and direct room URL.
+  var sb=document.getElementById("roomShareAgain");
+  if(sb){var share=sb.cloneNode(true);sb.parentNode.replaceChild(share,sb);share.addEventListener("click",async function(){
+    var code=ROOM&&ROOM.id;if(!code)return;
+    var link=location.origin+location.pathname+"?source=pwa&room="+encodeURIComponent(code);
+    var message="Давай пройдём «Наедине» вместе ❤️\nЯ уже создал(а) нашу комнату!\n\nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗\n\n"+link+"\n\nКод комнаты на всякий случай: "+code;
+    try{if(navigator.share){await navigator.share({title:"Наша комната · Наедине",text:message});return}
+      await navigator.clipboard.writeText(message);roomMsg("Приглашение скопировано 💗");
+    }catch(e){if(e&&e.name!=="AbortError"){try{prompt("Скопируйте приглашение",message)}catch(ignore){}}}
+  });}
+  var css=document.createElement("style");
+  css.textContent="#game #roomRefresh,#game #roomShareAgain{min-height:31px!important;padding:6px 9px!important;border-radius:12px!important;font-size:.66rem!important;line-height:1.15!important;gap:4px!important;box-shadow:0 2px 7px rgba(145,83,111,.08)!important}#game #roomRefresh{background:linear-gradient(135deg,#F1F7F1,#E5F0E8)!important;color:#4E705E!important;border-color:#D4E5D8!important}#game #roomShareAgain{background:linear-gradient(135deg,#F4DDE8,#E6BED0)!important;color:#795568!important;border-color:#E2BDCE!important}";
+  document.head.appendChild(css);
+})();
+</script>
+
 </body>
 </html>
 <style id="results-and-answered-queue-fix">
