@@ -1723,7 +1723,7 @@ async function inviteToRoom(){
   inviteUrl.searchParams.set("room",code);
   inviteUrl.hash="";
   var site=inviteUrl.href;
-  var message="Давай пройдём «Наедине» вместе ❤️\\nЯ уже создал(а) нашу комнату!\\n\\nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗\\n\\n"+site+"\\n\\nКод комнаты на всякий случай: "+code;
+  var message="Давай пройдём «Наедине» вместе ❤️\nЯ уже создал(а) нашу комнату!\n\nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗\n\n"+site+"\n\nКод комнаты на всякий случай: "+code;
   var data={title:"Наедине — приглашение в нашу комнату",text:message,url:site};
   if(navigator.share){
     try{await navigator.share(data);el("roomCodeStatus").textContent="Приглашение готово к отправке 💗"}
