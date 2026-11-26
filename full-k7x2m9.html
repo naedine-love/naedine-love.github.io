@@ -1480,9 +1480,13 @@ try{if(typeof firebase!=="undefined"){
   });
   authP.catch(function(){});
 }}catch(e){}
+/* Warm restore from the last successful entitlement response to avoid a paywall flash.
+   The server revalidates the subscription immediately after Firebase auth. */
+try{var cachedQuestions=JSON.parse(localStorage.getItem("kp_cached_protected_questions")||"null");if(cachedQuestions&&[3,4,5,6,7].every(function(n){return Array.isArray(cachedQuestions[n])&&cachedQuestions[n].length===15})){[3,4,5,6,7].forEach(function(n){B[n]=cachedQuestions[n]});FULL=true;BLOCKS=[1,2,3,4,5,6,7];updateOverview();chips()}}catch(e){}
 function applyTelegramAccess(data){
   var blocks=data&&data.blocks||{};
   [3,4,5,6,7].forEach(function(n){if(Array.isArray(blocks[n])&&blocks[n].length===15)B[n]=blocks[n]});
+  try{localStorage.setItem("kp_cached_protected_questions",JSON.stringify(blocks))}catch(e){}
   if([3,4,5,6,7].some(function(n){return !Array.isArray(B[n])||B[n].length!==15}))throw new Error("invalid_questions");
   FULL=true;BLOCKS=[1,2,3,4,5,6,7];
   try{localStorage.setItem("kp_full_access","1")}catch(e){}
@@ -1550,10 +1554,12 @@ function pollTelegramStatus(sessionId,attempt){
 function restoreTelegramAccess(){
   /* Проверяем сохранённое сервером право доступа для постоянного Firebase UID.
      Локальный флажок не используем как условие — он может быть очищен браузером. */
-  telegramApi("/api/telegram/access",{}).then(applyTelegramAccess).catch(function(error){
-    FULL=false;BLOCKS=[1,2];
+  telegramApi("/api/telegram/access",{roomCode:ROOM&&ROOM.id||""}).then(applyTelegramAccess).catch(function(error){
+    /* Preserve last verified questions on temporary network/API errors. */
     if(error&&["telegram_not_linked","not_subscribed"].includes(error.code)){
-      try{localStorage.removeItem("kp_full_access")}catch(e){}
+      FULL=false;BLOCKS=[1,2];
+      try{localStorage.removeItem("kp_full_access");localStorage.removeItem("kp_cached_protected_questions")}catch(e){}
+      updateOverview();chips();
     }
   });
 }
