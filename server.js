@@ -453,14 +453,15 @@ app.post("/api/telegram/access", async (req, res) => {
     const db=admin.firestore();
     // Fast path: verify the current user's own entitlement first. This avoids
     // searching all rooms and calling Telegram for unrelated room members.
-    const [ownEnt,ownTelegram]=await Promise.all([entitlementRef(user.uid).get(),privateTelegramRef(user.uid).get()]);
-    if(ownEnt.exists&&ownEnt.data().active===true&&!ownEnt.data().sharedFromRoom&&ownTelegram.exists&&ownTelegram.data().telegramId){
-      if(await getMembership(String(ownTelegram.data().telegramId))){
-        await entitlementRef(user.uid).set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-        if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({telegramId:String(ownTelegram.data().telegramId),active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-        return res.json({ok:true,access:"subscriber",blocks:questions});
-      }
-      await entitlementRef(user.uid).delete().catch(()=>{});
+    const ownEnt=await entitlementRef(user.uid).get();
+    // A non-shared active entitlement is written only after the bot has verified
+    // this Telegram account's channel membership. Treat it as durable proof:
+    // re-checking getChatMember on every room/device restore can revoke valid
+    // access because Telegram may return a transient or mismatched membership result.
+    if(ownEnt.exists&&ownEnt.data().active===true&&!ownEnt.data().sharedFromRoom){
+      await entitlementRef(user.uid).set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      return res.json({ok:true,access:"subscriber",blocks:questions});
     }
     // A room invite passes the room code so we can inspect exactly that pair
     // rather than query up to five rooms and re-check irrelevant Telegram users.
@@ -488,8 +489,9 @@ app.post("/api/telegram/access", async (req, res) => {
     if(previous.exists&&previous.data().sharedFromRoom)await entitlementRef(user.uid).delete().catch(()=>{});
     if(deviceKeyHash){
       const deviceRef=db.collection("deviceEntitlements").doc(deviceKeyHash),device=await deviceRef.get();
-      if(device.exists&&device.data().active&&device.data().telegramId){
-        if(!await getMembership(device.data().telegramId)){await deviceRef.delete().catch(()=>{});return sendError(res,403,"not_subscribed","Подписка на канал «Наедине» не найдена.");}
+      // Device entitlement is also created only after successful bot verification.
+      // Keep that verified grant stable instead of querying Telegram on every restore.
+      if(device.exists&&device.data().active===true){
         await deviceRef.set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
         return res.json({ok:true,blocks:questions});
       }
