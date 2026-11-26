@@ -2741,6 +2741,55 @@ answerGuess=async function(choice,button){
  catch(e){roomMsg(e.message||"Не удалось сохранить ответ.")}
  finally{if(button)button.disabled=false}
 };
+
+// Post-pass for user-requested game, daily state and user-generated ideas.
+(function(){
+ // Answers are sent as the selected text, not an internal option number.
+ var priorAnswerGuess=answerGuess;
+ answerGuess=async function(choice,button){
+   var g=COUPLE_STATE&&COUPLE_STATE.games&&COUPLE_STATE.games.guess;if(!g)return;
+   var mine=g.myAnswers||{},round=0;while(round<10&&mine[round]!==undefined)round++;
+   if(round>=10)return;
+   var text=String(choice),q=GUESS_QUESTIONS[round];
+   if(/^[0-2]$/.test(text))text=q.a[Number(text)];
+   if(button)button.disabled=true;
+   try{await coupleApi("/api/couple/game/guess/answer",{roomCode:ROOM.id,round:round,choice:text});await syncCoupleData(false);renderCouplePanel()}
+   catch(e){roomMsg(e.message||"Не удалось сохранить ответ.")}
+   finally{if(button)button.disabled=false}
+ };
+ el("couplePanelContent").addEventListener("click",function(e){
+   if(e.target&&e.target.id==="guessCustomSend"){var inp=el("guessCustom"),v=inp&&inp.value.trim();if(v)answerGuess(v,e.target)}
+ });
+ // Replace the former synchronized truth/dare entry with a local pass-the-phone game.
+ var truthEntry=document.querySelector('[data-couple-open="truth"]');
+ if(truthEntry){truthEntry.setAttribute("data-couple-open","truthSolo");truthEntry.textContent="📱 Правда или действие · один телефон"}
+ document.querySelectorAll('[data-couple-open="truthSolo"]').forEach(function(n,i){if(i>0)n.remove()});
+ // Daily answer button reflects server-confirmed saved state (including after reopening).
+ var renderDailyBase=renderDailyPanel;
+ renderDailyPanel=function(){
+   var html=renderDailyBase(),daily=COUPLE_STATE&&COUPLE_STATE.daily;
+   if(daily&&daily.mine&&daily.mine.answer)html=html.replace('>Сохранить ответ ♡</button>','>Ответ сохранён ✓</button>');
+   return html;
+ };
+ // Extend ideas with a user-submitted idea; shared through the authenticated room API.
+ var renderIdeasBase=renderIdeasPanel;
+ renderIdeasPanel=function(){
+   var html=renderIdeasBase(),custom=COUPLE_STATE&&COUPLE_STATE.customIdeas||[];
+   html+='<h4 class="couple-subheading">Ваши идеи</h4>';
+   html+=custom.length?custom.map(function(x){return '<article class="date-idea"><div><b>'+coupleEscape(x.title)+'</b><p>'+coupleEscape(x.description||"Идея от вашей пары")+'</p><small>Добавлено '+coupleEscape(x.createdBy===COUPLE_STATE.uid?"вами":"партнёром")+'</small></div></article>'}).join(""):'<p class="couple-empty">Пока нет собственных идей. Добавьте то, что хочется попробовать именно вам.</p>';
+   html+='<form id="customIdeaForm" class="couple-form"><label for="customIdeaTitle">Название идеи</label><input id="customIdeaTitle" maxlength="100" required placeholder="Например, устроить пикник ночью"><label for="customIdeaDescription">Подробности (необязательно)</label><textarea id="customIdeaDescription" maxlength="500" rows="2" placeholder="Как мы это представляем…"></textarea><button class="btn main" type="submit">Добавить свою идею ♡</button><p class="couple-status" id="customIdeaStatus"></p></form>';
+   return html;
+ };
+ el("couplePanelContent").addEventListener("submit",async function(e){
+   if(e.target.id!=="customIdeaForm")return;e.preventDefault();
+   var title=el("customIdeaTitle").value.trim(),description=el("customIdeaDescription").value.trim(),status=el("customIdeaStatus"),button=e.target.querySelector('button[type="submit"]');
+   if(title.length<3){status.textContent="Напишите название чуть подробнее.";return}
+   button.disabled=true;button.textContent="Сохраняем…";
+   try{await coupleApi("/api/couple/idea/add",{roomCode:ROOM.id,title:title,description:description});await syncCoupleData(false);renderCouplePanel();roomMsg("Ваша идея сохранена и видна партнёру ♡")}
+   catch(err){status.textContent=err.message||"Не удалось сохранить идею."}
+   finally{button.disabled=false;button.textContent="Добавить свою идею ♡"}
+ });
+})();
 </script>
 
 
