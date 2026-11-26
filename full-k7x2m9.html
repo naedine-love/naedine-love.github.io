@@ -1416,16 +1416,16 @@ var DATE_IDEAS=[
 {id:"future-letter",title:"Письмо в будущее",desc:"Напишите, о чём мечтаете как пара, и договоритесь перечитать через год"}
 ];
 var GUESS_QUESTIONS=[
-{q:"Какой отдых я выберу?",a:["Море и пляж","Горы и природа"]},
-{q:"Как я предпочту провести свободный вечер?",a:["Дома в уюте","Гулять и куда-нибудь выбраться"]},
-{q:"Что меня скорее порадует?",a:["Неожиданный подарок","Время только вдвоём"]},
-{q:"Какой отпуск мне ближе?",a:["Спланированный заранее","Спонтанное приключение"]},
-{q:"Что я выберу на ужин?",a:["Попробовать новое место","Любимое проверенное блюдо"]},
-{q:"Какой подарок мне приятнее?",a:["Практичный и полезный","Личный и сделанный с душой"]},
-{q:"Что я выберу в выходной?",a:["Активность и впечатления","Отдых и спокойствие"]},
-{q:"Как я чаще проявляю любовь?",a:["Слова и признания","Забота и поступки"]},
-{q:"Какое свидание мне понравится больше?",a:["Красивый вечер вне дома","Домашний вечер вдвоём"]},
-{q:"Что я выберу для совместного приключения?",a:["Путешествие в новое место","Новый опыт рядом с домом"]}
+{q:"Какой отдых я выберу?",a:["Море и пляж","Горы и природа","Город и новые места"]},
+{q:"Как я предпочту провести свободный вечер?",a:["Дома в уюте","Гулять и куда-нибудь выбраться","Встретиться с друзьями"]},
+{q:"Что меня скорее порадует?",a:["Неожиданный подарок","Время только вдвоём","Тёплые слова и поддержка"]},
+{q:"Какой отпуск мне ближе?",a:["Спланированный заранее","Спонтанное приключение","Отдых без планов"]},
+{q:"Что я выберу на ужин?",a:["Попробовать новое место","Любимое проверенное блюдо","Приготовить вместе дома"]},
+{q:"Какой подарок мне приятнее?",a:["Практичный и полезный","Личный и сделанный с душой","Совместное впечатление"]},
+{q:"Что я выберу в выходной?",a:["Активность и впечатления","Отдых и спокойствие","Небольшую поездку"]},
+{q:"Как я чаще проявляю любовь?",a:["Слова и признания","Забота и поступки","Объятия и прикосновения"]},
+{q:"Какое свидание мне понравится больше?",a:["Красивый вечер вне дома","Домашний вечер вдвоём","Необычное приключение"]},
+{q:"Что я выберу для совместного приключения?",a:["Путешествие в новое место","Новый опыт рядом с домом","Творческое занятие вдвоём"]}
 ];
 var TRUTH_PROMPTS={
 romance:{truth:["Какой мой поступок заставляет тебя чувствовать себя любимым(ой)?","Какое наше свидание ты хотел(а) бы повторить?","Что во мне до сих пор вызывает у тебя улыбку?"],action:["Обними партнёра и скажи три вещи, за которые ты его ценишь.","Устройте минуту медленного танца под любимую песню.","Напиши партнёру короткое признание, глядя ему в глаза."]},
@@ -2724,6 +2724,23 @@ authP.then(async function(){
   // Room code/share buttons stay available after modal has been dismissed.
   if(el("roomCodeModal")){var status=el("roomCodeStatus");if(status)status.setAttribute("aria-live","polite")}
 })();
+
+// Refined guess game: each player advances independently; results appear only
+// after both have completed all ten rounds. Supports three choices and free text.
+renderGuessPanel=function(){
+ var g=COUPLE_STATE.games&&COUPLE_STATE.games.guess;if(!g)return '<p class="couple-panel-lead">Каждый отвечает в своём темпе. Ваши ответы сохраняются сразу, а общий результат откроется после прохождения обоих.</p><button class="btn main" type="button" id="startGuessGame">Начать игру ♡</button>';
+ if(g.completed){var rounds=g.rounds||[],score=rounds.filter(function(r){return r.answers&&r.answers[COUPLE_STATE.uid]===r.answers[COUPLE_STATE.partnerUid]}).length;return '<div class="history-summary"><b>Игра завершена!</b><span>'+score+' совпадений из 10</span></div><div class="guess-results">'+rounds.map(function(r){var q=GUESS_QUESTIONS[r.round]||{q:"Вопрос"},a=r.answers||{},same=a[COUPLE_STATE.uid]===a[COUPLE_STATE.partnerUid];return '<article class="guess-result-item"><b>'+(same?'♡ Совпали':'✦ По-разному')+'</b><span>'+coupleEscape(q.q)+'</span><small>Вы: '+coupleEscape(a[COUPLE_STATE.uid]||"—")+' · Партнёр: '+coupleEscape(a[COUPLE_STATE.partnerUid]||"—")+'</small></article>'}).join("")+'</div><button class="btn main" type="button" id="restartGuessGame">Сыграть ещё раз</button>'}
+ var mine=g.myAnswers||{},index=0;while(index<10&&mine[index]!==undefined)index++;
+ if(index>=10)return '<div class="couple-wait">Вы прошли все 10 вопросов! Результат появится, когда партнёр тоже завершит игру.</div><button class="btn secondary" type="button" id="restartGuessGame">Начать заново</button>';
+ var q=GUESS_QUESTIONS[index];return '<p class="couple-panel-lead">Ваш прогресс: '+(index+1)+' из 10. Партнёр отвечает независимо.</p><div class="daily-question-card"><p>'+coupleEscape(q.q)+'</p></div><div class="guess-options">'+q.a.map(function(a,i){return '<button type="button" data-guess-choice="'+i+'">'+coupleEscape(a)+'</button>'}).join("")+'</div><div class="couple-form"><label for="guessCustom">Или свой ответ</label><input id="guessCustom" maxlength="120" placeholder="Напишите свой вариант"><button class="btn secondary" type="button" id="guessCustomSend">Отправить свой ответ</button></div><p class="couple-status" id="coupleActionStatus"></p>';
+};
+answerGuess=async function(choice,button){
+ if(button)button.disabled=true;var g=COUPLE_STATE.games.guess,mine=g.myAnswers||{},round=0;while(round<10&&mine[round]!==undefined)round++;
+ if(round>=10){if(button)button.disabled=false;return}
+ try{await coupleApi("/api/couple/game/guess/answer",{roomCode:ROOM.id,round:round,choice:String(choice)});await syncCoupleData(false);renderCouplePanel()}
+ catch(e){roomMsg(e.message||"Не удалось сохранить ответ.")}
+ finally{if(button)button.disabled=false}
+};
 </script>
 
 
