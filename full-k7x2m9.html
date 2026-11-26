@@ -1115,6 +1115,28 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
   .idea-actions{grid-template-columns:1fr}
 }
 
+
+/* Intimate card games */
+.intimate-game-list{display:grid;gap:11px;margin:14px 0}
+.intimate-game-card{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;padding:13px;border:1px solid #F0DCD8;border-radius:17px;background:#FFFBF8}
+.intimate-game-icon{width:40px;height:40px;border-radius:13px;background:#F8E8EB;display:grid;place-items:center;font-size:1.25rem}
+.intimate-game-copy{min-width:0;display:grid;gap:3px}
+.intimate-game-copy b{font-size:.9rem;color:#31534A}
+.intimate-game-copy small,.intimate-history small{font-size:.7rem;color:#927D7A;line-height:1.4}
+.intimate-game-actions{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.intimate-game-actions button{border:1px solid #EBD5DA;background:#F9EDF0;color:#805362;border-radius:12px;min-height:42px;font:inherit;font-size:.8rem;font-weight:800}
+.intimate-consent-note{padding:11px 13px;background:#F7F0E8;border-radius:13px;color:#76685F;font-size:.75rem;line-height:1.5}
+.intimate-card-wrap{perspective:900px;margin:8px 0 14px}
+.intimate-card{padding:24px 18px;text-align:center;border-radius:22px;border:1px solid #EFD5DC;background:radial-gradient(circle at 50% 0%,#FCE8ED,transparent 55%),linear-gradient(145deg,#FFFCFA,#F8ECE9);box-shadow:0 10px 24px #80536212;animation:intimateReveal .45s ease both}
+.intimate-card-symbol{font-size:2rem;color:#C9798B;margin:10px}
+.intimate-card h3{font-family:"Lora",Georgia,serif;font-size:1.15rem;margin:4px 0 10px;color:#31534A}
+.intimate-card p{font-size:1rem;line-height:1.6;color:#493D3B;margin:0 0 12px}
+.intimate-card>small{font-size:.7rem;color:#927D7A}
+.intimate-history{padding:11px 13px;border:1px solid #F0E2DF;border-radius:13px;margin:8px 0;background:#FFFCFA}
+.intimate-history p{margin:5px 0 0;font-size:.85rem;line-height:1.5}
+@keyframes intimateReveal{from{opacity:0;transform:rotateX(-12deg) translateY(8px)}to{opacity:1;transform:rotateX(0) translateY(0)}}
+@media(prefers-reduced-motion:reduce){.intimate-card{animation:none}}
+
 </style>
 </head>
 <body>
@@ -1367,7 +1389,11 @@ var TRUTH_PROMPTS={
 romance:{truth:["Какой мой поступок заставляет тебя чувствовать себя любимым(ой)?","Какое наше свидание ты хотел(а) бы повторить?","Что во мне до сих пор вызывает у тебя улыбку?"],action:["Обними партнёра и скажи три вещи, за которые ты его ценишь.","Устройте минуту медленного танца под любимую песню.","Напиши партнёру короткое признание, глядя ему в глаза."]},
 humor:{truth:["Какой самый смешной момент у нас был?","Какую мою привычку ты иногда копируешь?","Кто из нас смешнее ведёт себя сонным?"],action:["Изобрази, как партнёр собирается на свидание.","Придумай смешное прозвище вашей паре на сегодня.","30 секунд говори только комплиментами с серьёзным лицом."]},
 honesty:{truth:["О чём тебе бывает трудно попросить меня?","Что помогает тебе чувствовать себя услышанным(ой)?","Какую нашу привычку ты хотел(а) бы изменить к лучшему?"],action:["Расскажи о важной мечте, которую ещё не обсуждали.","Назови одну вещь, в которой хочешь стать внимательнее к партнёру.","Скажите друг другу по одному желанию на ближайший месяц."]},
-adult:{truth:["Что помогает тебе расслабиться и почувствовать близость?","Какой романтический момент ты хотел(а) бы повторить?","О чём тебе хотелось бы поговорить откровеннее?"],action:["Поцелуй партнёра так, как давно хотел(а).","Шепни партнёру на ухо одно нежное желание.","Устройте приватный романтический танец."]}
+adult:{truth:["Что помогает тебе расслабиться и почувствовать близость?","Какой романтический момент ты хотел(а) бы повторить?","О чём тебе хотелось бы поговорить откровеннее?"],action:["Поцелуй партнёра так, как давно хотел(а).","Шепни партнёру на ухо одно нежное желание.","Устройте приватный романтический танец."]},
+spark:{truth:["Какой момент между нами ты хотел(а) бы пережить ещё раз?","Что во мне кажется тебе особенно притягательным?","Какой поцелуй ты вспоминаешь чаще всего?"],action:["Посмотрите друг другу в глаза 20 секунд, не отвлекаясь.","Обнимитесь и назовите по одной вещи, за которую цените друг друга.","Подарите друг другу долгий поцелуй."]},
+seduce:{truth:["Какой мой образ тебе особенно нравится?","Что помогает создать для тебя атмосферу романтики?","Какой неожиданный романтический жест тебе понравился бы?"],action:["Прошепчи партнёру нежный комплимент.","Пригласи партнёра на медленный танец.","Устройте по очереди по минуте флирта — только взглядами и улыбками."]},
+secret:{truth:["О каком романтическом желании ты давно хотел(а) рассказать?","Какой новый совместный опыт тебе было бы интересно попробовать?","Что помогает тебе чувствовать себя желанным(ой) и любимым(ой)?"],action:["Расскажите друг другу по одному желанию, которое готовы обсудить.","Задайте партнёру один бережный вопрос о близости.","Выберите одно маленькое желание, которое сможете исполнить на этой неделе."]},
+touch:{truth:["Какие прикосновения помогают тебе расслабиться?","Как ты понимаешь, что сейчас хочется нежности?","Какой формат домашнего спа тебе понравился бы?"],action:["Сделайте друг другу короткий массаж плеч, предварительно спросив согласие.","Возьмитесь за руки и устройте минуту спокойствия.","Обнимитесь так, как комфортно обоим, и задержитесь на несколько секунд."]}
 };
 var B=[null,["Что в моём характере тебя удивило, когда мы только познакомились?","Какую мою маленькую привычку ты находишь милой?","Что помогает мне восстановиться после тяжёлого дня?","Что мне нужно, когда я расстроен(а)? Как ты это понимаешь?","В какие моменты я больше всего становлюсь самим(ой) собой?","Что меня тревожит, но я редко об этом говорю?","Какой страх я ношу в себе с детства?","Что в наших отношениях для меня самое ценное?","Какое наше воспоминание я вспоминаю чаще всего?","Какая мелочь делает мой день лучше?","Какой наш маленький ритуал (сообщение, звонок, привычка) для меня самый важный?","Каким ты запомнил(а) наш первый разговор? Что тебя тогда зацепило?","Какой момент из моего детства сильнее всего меня сформировал?","Что ты хотел(а) бы, чтобы я лучше понимал(а) в тебе?","Что нового ты узнал(а) обо мне за время наших отношений, чего не ожидал(а)?"],["Какое блюдо я могу есть каждую неделю, и оно мне не надоест?","Какой фильм или сериал я пересматривал(а) чаще всего?","Какая песня сразу поднимает мне настроение?","Что я закажу в любимом кафе, если можно выбрать всё что угодно?","Что из того, что я люблю, тебе до сих пор непонятно? Спроси меня об этом.","Какой подарок обрадовал бы меня больше всего? А какой обрадовал бы тебя? Сравним.","Куда я бы поехал(а) в идеальный отпуск? А ты? Куда поедем вместе?","Какую мою странную привычку ты замечаешь, но ни разу не обсуждал(а)?","Что из моего детства ты хотел(а) бы увидеть своими глазами: фото, любимое место, игрушку?","Каким должен быть наш идеальный выходной? Где мы совпали, а где нет?","Что бы тебе хотелось приготовить или попробовать вместе со мной в первый раз?","Расскажи то, что я о тебе точно не знаю, но, по-твоему, должен(на) узнать.","Какое занятие нам стоит попробовать вместе, но мы всё откладывали?","Какое моё качество ты полюбил(а) не сразу, а со временем?","Назовите друг про друга любимый цвет, еду и фильм, а потом сверьтесь. Кто был точнее?"]];
 var INTRO="Этот блок для взрослых пар. Отвечайте честно и без осуждения.", BRIDGE="Вы уже узнали друг друга лучше. Дальше пойдёт самое интересное: быт, мечты, близость и то, что вы хотите изменить вместе.";
@@ -2215,13 +2241,14 @@ function renderGuessPanel(){
   return progress+'<div class="daily-question-card"><p>'+coupleEscape(q.q)+'</p></div><div class="guess-options">'+q.a.map(function(a,i){return '<button type="button" data-guess-choice="'+i+'">'+coupleEscape(a)+'</button>'}).join('')+'</div><p class="couple-status" id="coupleActionStatus"></p>';
 }
 function renderTruthPanel(){
-  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для игры нужны оба участника комнаты.</p>';
+  if(!COUPLE_STATE.partnerUid)return '<p class="couple-empty">Для совместных игр нужны оба участника комнаты. Вы сможете вытягивать карточки по очереди, даже если партнёр зайдёт позже.</p>';
   var g=COUPLE_STATE.games&&COUPLE_STATE.games.truth||{},pending=g.pending,uid=COUPLE_STATE.uid,turnUid=g.currentTurnUid||COUPLE_STATE.members[0],mine=turnUid===uid;
-  var history=(g.history||[]).slice(-3).reverse().map(function(item){return '<p class="truth-history-item"><small>'+coupleEscape(({romance:"Романтика",humor:"Юмор",honesty:"Откровенность",adult:"18+"}[item.category]||"Игра"))+' · '+(item.kind==="truth"?"Правда":"Действие")+'</small>'+coupleEscape(item.prompt)+'</p>'}).join('');
-  if(pending)return '<div class="daily-question-card"><span class="eyebrow">'+coupleEscape(({romance:"РОМАНТИКА",humor:"ЮМОР",honesty:"ОТКРОВЕННОСТЬ",adult:"18+"}[pending.category]||"ВАШ ХОД"))+' · '+(pending.kind==="truth"?"ПРАВДА":"ДЕЙСТВИЕ")+'</span><p>'+coupleEscape(pending.prompt)+'</p></div>'+(pending.byUid===uid?'<p class="couple-panel-lead">Ваш ход. Можно выполнить задание или спокойно пропустить его.</p><div class="truth-turn-actions"><button class="btn main" type="button" id="completeTruthTurn">Выполнено · передать ход</button><button class="btn secondary" type="button" id="skipTruthTurn">Пропустить</button></div>':'<p class="couple-wait">Партнёр выбрал задание. После его хода очередь перейдёт к вам.</p>')+history;
-  if(!mine)return '<div class="couple-wait">Сейчас очередь партнёра. Скоро он выберет правду или действие для вас обоих.</div>'+history;
-  var cats=[["romance","♡ Романтика"],["humor","☀ Юмор"],["honesty","✦ Откровенность"],["adult","🔥 18+"]].map(function(c){return '<div class="truth-category"><b>'+c[1]+'</b><div><button type="button" data-truth-choice="'+c[0]+'|truth">Правда</button><button type="button" data-truth-choice="'+c[0]+'|action">Действие</button></div></div>'}).join('');
-  return '<p class="couple-panel-lead">Ваш ход. Выберите настроение и решите: правда или действие. Любое задание можно пропустить.</p>'+cats+history;
+  var history=(g.history||[]).slice(-4).reverse().map(function(item){return '<article class="intimate-history"><small>'+coupleEscape(({spark:"Искра между нами",seduce:"Соблазни меня",secret:"Секретные желания",touch:"Прикосновения",adult:"Только для нас · 18+",romance:"Романтика",humor:"Юмор",honesty:"Откровенность"}[item.category]||"Наша игра"))+' · '+(item.kind==="truth"?"Вопрос":"Задание")+'</small><p>'+coupleEscape(item.prompt)+'</p></article>'}).join('');
+  if(pending)return '<div class="intimate-card-wrap"><div class="intimate-card"><span class="eyebrow">'+coupleEscape(({spark:"ИСКРА МЕЖДУ НАМИ",seduce:"СОБЛАЗНИ МЕНЯ",secret:"СЕКРЕТНЫЕ ЖЕЛАНИЯ",touch:"ПРИКОСНОВЕНИЯ",adult:"ТОЛЬКО ДЛЯ НАС · 18+",romance:"РОМАНТИКА",humor:"ЮМОР",honesty:"ОТКРОВЕННОСТЬ"}[pending.category]||"ВАША КАРТОЧКА"))+'</span><div class="intimate-card-symbol">♡</div><h3>'+(pending.kind==="truth"?"Вопрос для вас":"Ваше задание")+'</h3><p>'+coupleEscape(pending.prompt)+'</p><small>Без давления: можно пропустить в любой момент.</small></div></div>'+(pending.byUid===uid?'<p class="couple-panel-lead">Ваш ход. Когда будете готовы, отметьте выполнение или пропустите карточку.</p><div class="truth-turn-actions"><button class="btn main" type="button" id="completeTruthTurn">Готово · следующая карточка</button><button class="btn secondary" type="button" id="skipTruthTurn">Пропустить</button></div>':'<p class="couple-wait">Партнёр вытянул карточку. После его хода очередь перейдёт к вам.</p>')+history;
+  if(!mine)return '<div class="couple-wait">Сейчас ход партнёра. Когда он вытянет карточку и завершит ход, очередь перейдёт к вам.</div>'+history;
+  var games=[["spark","❤️","Искра между нами","Нежность и романтика"],["seduce","✨","Соблазни меня","Флирт и игривые задания"],["secret","💌","Секретные желания","Бережные откровенные разговоры"],["touch","🤍","Прикосновения","Нежность и расслабление"],["adult","🔥","Только для нас · 18+","Для взрослых пар; только по взаимному желанию"]];
+  var cards=games.map(function(c){return '<article class="intimate-game-card"><div class="intimate-game-icon">'+c[1]+'</div><div class="intimate-game-copy"><b>'+c[2]+'</b><small>'+c[3]+'</small></div><div class="intimate-game-actions"><button type="button" data-truth-choice="'+c[0]+'|truth">Вопрос</button><button type="button" data-truth-choice="'+c[0]+'|action">Задание</button></div></article>'}).join('');
+  return '<p class="couple-panel-lead">Выберите колоду, затем вытяните карточку. Ходы чередуются между вами. Любой вопрос можно оставить без ответа, а любое задание — пропустить.</p><div class="intimate-consent-note">♡ Играйте только в том, что комфортно обоим. Перед каждым входом в колоду 18+ участник подтверждает возраст и своё желание продолжить.</div><div class="intimate-game-list">'+cards+'</div><h4 class="couple-subheading">Недавно вытянутые карточки</h4>'+(history||'<p class="couple-empty">Здесь появятся ваши общие игровые моменты.</p>');
 }
 function renderDatesPanel(){
   var dates=COUPLE_STATE.coupleDates||[],today=coupleDateKey();
@@ -2303,6 +2330,7 @@ async function answerGuess(choice,button){
   finally{if(button)button.disabled=false}
 }
 async function chooseTruthPrompt(category,kind){
+  if(category==="adult"&&!window.confirm("Мне есть 18 лет, и я добровольно хочу открыть эту колоду."))return;
   var options=(TRUTH_PROMPTS[category]||{})[kind]||[];
   if(!options.length)return;
   var prompt=options[Math.floor(Math.random()*options.length)];
