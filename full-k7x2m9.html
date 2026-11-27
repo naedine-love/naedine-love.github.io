@@ -1557,17 +1557,14 @@ function restoreTelegramAccess(){
      Локальный флажок не используем как условие — он может быть очищен браузером. */
   telegramApi("/api/telegram/access",{roomCode:ROOM&&ROOM.id||""}).then(applyTelegramAccess).catch(function(error){
     /* Preserve last verified questions on temporary network/API errors. */
-    if(error&&["telegram_not_linked","not_subscribed"].includes(error.code)){
-      FULL=false;BLOCKS=[1,2];
-      try{localStorage.removeItem("kp_full_access");localStorage.removeItem("kp_cached_protected_questions")}catch(e){}
-      updateOverview();chips();
-    }
-    /* Show a safe diagnostic instead of silently leaving every block locked. */
+    /* Keep the room screen clean on temporary subscription-check failures.
+       Do not erase previously verified local access or display technical codes. */
     if(ROOM&&MODE==="room"){
-      var code=String(error&&error.code||error&&error.message||"access_unknown").replace(/[^a-z0-9_/-]/gi,"").slice(0,48);
       var status=el("roomAccessStatus");
-      if(status){status.hidden=false;status.textContent="Не удалось открыть полную версию. Код ошибки: "+code+". Нажмите «Обновить».";}
-      roomMsg("Не удалось восстановить доступ: "+code);
+      if(status){status.hidden=true;status.textContent="";}
+      var inline=el("rmsg2"),gameMsg=el("gmsg");
+      if(inline)inline.textContent="";
+      if(gameMsg)gameMsg.textContent="";
     }
   });
 }
@@ -2621,7 +2618,13 @@ authP.then(async function(){
   if(incomingRoom){
     try{history.replaceState(null,"",location.pathname+location.hash)}catch(e){}
     var joined=await joinRoomByCode(incomingRoom);
-    if(joined)return;
+    if(joined){
+      /* Invitation links always land on the room overview, never a saved question. */
+      showBlockRoom();
+      window.scrollTo({top:0,behavior:"instant"});
+      roomMsg("");
+      return;
+    }
   }
   var savedRoom=sget("room");
   if(!savedRoom||!db)return;
