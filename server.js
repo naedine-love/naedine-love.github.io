@@ -474,16 +474,18 @@ app.post("/api/telegram/access", async (req, res) => {
     }
     for(const roomDoc of roomDocs){
       const members=Array.isArray(roomDoc.data().members)?roomDoc.data().members:[];
-      if(members.length!==2||!members.includes(user.uid))continue;
-      const partnerUid=members.find(uid=>uid!==user.uid);if(!partnerUid)continue;
-      const partnerEnt=await entitlementRef(partnerUid).get();
-      // An active, non-shared entitlement is the durable proof that this room member
-      // completed the Telegram subscription check. Do not require a second private
-      // Telegram profile lookup here: older verified accounts may not have that
-      // profile document even though their entitlement is valid.
-      if(!partnerEnt.exists||partnerEnt.data().active!==true||partnerEnt.data().sharedFromRoom)continue;
-      await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,sharedFromRoom:roomDoc.id,sharedFromUid:partnerUid,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-      return res.json({ok:true,access:"couple",blocks:questions});
+      // A room may contain a stale/duplicate member record after reconnecting.
+      // Keep the invite room as the boundary, but inspect every other actual member.
+      if(members.length<2||!members.includes(user.uid))continue;
+      for(const partnerUid of members.filter(uid=>uid&&uid!==user.uid)){
+        const partnerEnt=await entitlementRef(partnerUid).get();
+        // Any active entitlement means this member has already been granted access
+        // by the subscription check or by a trusted room grant. Let it unlock this
+        // member of the same room; never require both partners to subscribe.
+        if(!partnerEnt.exists||partnerEnt.data().active!==true)continue;
+        await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,sharedFromRoom:roomDoc.id,sharedFromUid:partnerUid,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+        return res.json({ok:true,access:"couple",blocks:questions});
+      }
     }
     const previous=await entitlementRef(user.uid).get();
     if(previous.exists&&previous.data().sharedFromRoom)await entitlementRef(user.uid).delete().catch(()=>{});
