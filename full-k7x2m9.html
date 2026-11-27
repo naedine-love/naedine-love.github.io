@@ -1758,11 +1758,11 @@ el("roomCodeModal").addEventListener("click",function(e){
 });
 document.addEventListener("keydown",function(e){if(e.key==="Escape"&&!el("roomCodeModal").hidden)closeRoomCode()});
 
-function enterRoom(code){
+function enterRoom(code,initialMembers){
   var previousRoom=sget("room");
   if(previousRoom)migrateLegacyRoomData(previousRoom);
   if(ROOM&&ROOM.id!==code)writePresence(false);
-  ROOM={id:code,members:[]};DN={};REV={};FETCH={};sset("room",code);listenRoom();startGame("room",true);startCoupleSync();
+  ROOM={id:code,members:Array.isArray(initialMembers)?initialMembers.slice():[]};DN={};REV={};FETCH={};sset("room",code);listenRoom();startGame("room",true);startCoupleSync();
   /* После соединения участников сервер повторно проверяет доступ пары. */
   authP.then(restoreTelegramAccess).catch(function(){});
 }
@@ -1770,7 +1770,7 @@ el("rcreate").onclick=async function(){
   saveName();roomMsg("Подключаемся к Firebase…");
   try{await withTimeout(authP,12000,"auth-timeout");roomMsg("Создаём комнату…");
     var code=genCode();await withTimeout(db.collection("rooms").doc(code).set({members:[UID],created:Date.now()}),12000,"firestore-timeout");
-    enterRoom(code);showRoomCode(code);roomMsg("")}
+    enterRoom(code,[UID]);showRoomCode(code);roomMsg("")}
   catch(e){roomMsg(errText(e))}
 };
 async function joinRoomByCode(rawCode){
@@ -1780,8 +1780,8 @@ async function joinRoomByCode(rawCode){
   try{await withTimeout(authP,12000,"auth-timeout");var ref=db.collection("rooms").doc(code),snap=await withTimeout(ref.get(),12000,"firestore-timeout");
     if(!snap.exists){roomMsg("Комната не найдена. Проверьте приглашение.");return false}
     var m=snap.data().members||[];
-    if(m.indexOf(UID)<0){if(m.length>=2){roomMsg("В этой комнате уже двое.");return false}await ref.update({members:[m[0],UID]})}
-    enterRoom(code);roomMsg("");return true}
+    if(m.indexOf(UID)<0){if(m.length>=2){roomMsg("В этой комнате уже двое.");return false}m=[m[0],UID];await ref.update({members:m})}
+    enterRoom(code,m);roomMsg("");return true}
   catch(e){roomMsg(errText(e));return false}
 }
 el("rjoin").onclick=function(){joinRoomByCode(el("rcode").value)};
@@ -1794,7 +1794,7 @@ el("pcont").onclick=async function(){
     var snap=await withTimeout(db.collection("rooms").doc(code).get(),12000,"firestore-timeout");
     var members=snap.exists?(snap.data().members||[]):[];
     if(!snap.exists||members.indexOf(UID)<0){el("controw").style.display="none";roomMsg("Эта комната больше недоступна. Можно создать новую или войти по коду.");return}
-    enterRoom(code);
+    enterRoom(code,members);
     showBlockRoom();
     window.scrollTo({top:0,behavior:"smooth"});
     roomMsg("");
@@ -2859,7 +2859,7 @@ answerGuess=async function(choice,button){
       await withTimeout(authP,12000,"auth-timeout");
       var snap=await withTimeout(db.collection("rooms").doc(code).get(),12000,"firestore-timeout");
       if(!snap.exists||!(snap.data().members||[]).includes(UID)){roomMsg("Комната больше недоступна.");return}
-      enterRoom(code);showBlockRoom();await restoreTelegramAccess();roomMsg("Комната обновлена 💗");
+      enterRoom(code,snap.data().members||[]);showBlockRoom();await restoreTelegramAccess();roomMsg("Комната обновлена 💗");
     }catch(e){roomMsg(errText(e)||"Не удалось обновить комнату.")}
     finally{fresh.disabled=false;fresh.textContent="↻ Обновить"}
   });}
