@@ -1,4 +1,4 @@
-const CACHE_NAME = "naedine-pwa-v67-room-overview-after-telegram-20261127-v30";
+const CACHE_NAME = "naedine-pwa-v68-fifteen-blocks-20261127-v31";
 const APP_SHELL = ["/full-k7x2m9.html", "/icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
