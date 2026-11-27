@@ -118,10 +118,11 @@ async function grantAccess(uid, telegramUser) {
     active: true, channel: CHANNEL_ID, checkedAt: now
   }, { merge: true });
 }
-async function grantDeviceAccess(deviceKeyHash, telegramUser) {
+async function grantDeviceAccess(deviceKeyHash, telegramUser, uid) {
   if (!deviceKeyHash) return;
   await admin.firestore().collection("deviceEntitlements").doc(deviceKeyHash).set({
     telegramId: String(telegramUser.id),
+    uid: String(uid),
     active: true,
     channel: CHANNEL_ID,
     checkedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -385,7 +386,7 @@ app.post("/telegram/webhook/" + WEBHOOK_KEY, async (req, res) => {
         return;
       }
       await grantAccess(snap.data().uid, telegramUser);
-      await grantDeviceAccess(snap.data().deviceKeyHash, telegramUser);
+      await grantDeviceAccess(snap.data().deviceKeyHash, telegramUser, snap.data().uid);
       await ref.set({ status: "verified", telegramId: String(telegramUser.id), verifiedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       await sendBotPhoto(chatId, "💗 Вы уже подписаны! Все оставшиеся темы «Наедине» для вас открыты. Продолжайте отвечать, делиться сокровенным и узнавать друг друга ещё ближе. ♡", returnKeyboard());
       return;
@@ -460,7 +461,7 @@ app.post("/api/telegram/access", async (req, res) => {
     // access because Telegram may return a transient or mismatched membership result.
     if(ownEnt.exists&&ownEnt.data().active===true&&!ownEnt.data().sharedFromRoom){
       await entitlementRef(user.uid).set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-      if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({uid:user.uid,active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
       return res.json({ok:true,access:"subscriber",blocks:questions});
     }
     // A room invite passes the room code so we can inspect exactly that pair
@@ -470,7 +471,9 @@ app.post("/api/telegram/access", async (req, res) => {
       const snap=await db.collection("rooms").doc(roomCode).get();
       if(snap.exists&&(snap.data().members||[]).includes(user.uid))roomDocs=[snap];
     }else{
-      const snap=await db.collection("rooms").where("members","array-contains",user.uid).limit(5).get();roomDocs=snap.docs;
+      // Never inherit a partner grant from an unrelated/previous room.
+      // Shared access is valid only for the exact room supplied by the client.
+      roomDocs=[];
     }
     for(const roomDoc of roomDocs){
       const members=Array.isArray(roomDoc.data().members)?roomDoc.data().members:[];
@@ -508,7 +511,7 @@ app.post("/api/telegram/access", async (req, res) => {
       const deviceRef=db.collection("deviceEntitlements").doc(deviceKeyHash),device=await deviceRef.get();
       // Device entitlement is also created only after successful bot verification.
       // Keep that verified grant stable instead of querying Telegram on every restore.
-      if(device.exists&&device.data().active===true){
+      if(device.exists&&device.data().active===true&&String(device.data().uid||"")===String(user.uid)){
         await deviceRef.set({checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
         return res.json({ok:true,blocks:questions});
       }
@@ -518,7 +521,7 @@ app.post("/api/telegram/access", async (req, res) => {
     const telegramId=String(linked.data().telegramId);
     if(!await getMembership(telegramId)){await entitlementRef(user.uid).delete().catch(()=>{});if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).delete().catch(()=>{});return sendError(res,403,"not_subscribed","Подписка на канал «Наедине» не найдена.");}
     await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-    if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({telegramId,active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    if(deviceKeyHash)await db.collection("deviceEntitlements").doc(deviceKeyHash).set({telegramId,uid:user.uid,active:true,channel:CHANNEL_ID,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
     return res.json({ok:true,blocks:questions});
   }catch(error){return sendError(res,error.code==="bot_not_admin"?503:502,error.code||"telegram_api_error",error.message);}
 });
