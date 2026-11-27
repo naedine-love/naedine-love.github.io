@@ -478,10 +478,25 @@ app.post("/api/telegram/access", async (req, res) => {
       // Keep the invite room as the boundary, but inspect every other actual member.
       if(members.length<2||!members.includes(user.uid))continue;
       for(const partnerUid of members.filter(uid=>uid&&uid!==user.uid)){
-        const partnerEnt=await entitlementRef(partnerUid).get();
-        // Any active entitlement means this member has already been granted access
-        // by the subscription check or by a trusted room grant. Let it unlock this
-        // member of the same room; never require both partners to subscribe.
+        let partnerEnt=await entitlementRef(partnerUid).get();
+        // Legacy recovery: older successful Telegram links may have the private
+        // Telegram profile but no entitlement document. Verify the partner's
+        // actual channel membership before creating the missing entitlement.
+        if(!partnerEnt.exists||partnerEnt.data().active!==true){
+          const partnerTelegram=await privateTelegramRef(partnerUid).get();
+          const telegramId=String(partnerTelegram.exists&&partnerTelegram.data().telegramId||"");
+          if(telegramId){
+            const subscribed=await getMembership(telegramId);
+            if(subscribed){
+              await entitlementRef(partnerUid).set({
+                active:true,channel:CHANNEL_ID,
+                checkedAt:admin.firestore.FieldValue.serverTimestamp()
+              },{merge:true});
+              partnerEnt=await entitlementRef(partnerUid).get();
+            }
+          }
+        }
+        // Only a verified active subscription can unlock the other member.
         if(!partnerEnt.exists||partnerEnt.data().active!==true)continue;
         await entitlementRef(user.uid).set({active:true,channel:CHANNEL_ID,sharedFromRoom:roomDoc.id,sharedFromUid:partnerUid,checkedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
         return res.json({ok:true,access:"couple",blocks:questions});
