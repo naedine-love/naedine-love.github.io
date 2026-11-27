@@ -7,6 +7,11 @@ const questions = (() => {
   catch { return null; }
 })();
 
+const paidQuestions = (() => {
+  try { return JSON.parse(process.env.PAID_QUESTIONS_JSON || "null"); }
+  catch { return null; }
+})();
+
 const app = express();
 app.set("trust proxy", 1);
 app.use((req, res, next) => {
