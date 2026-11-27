@@ -1281,7 +1281,7 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
   <section id="blockRoom" class="block-room">
     <p id="roomAccessStatus" class="room-access-status" role="status" aria-live="polite" hidden></p>
     <div class="couple-overview" id="coupleOverview" aria-live="polite"><div class="overview-top"><span>♡ Ваш общий путь</span><strong id="overallCount">0 из 7 блоков</strong></div><div class="overview-track"><i id="overallFill"></i></div><p id="overviewNote">Каждый разговор — ещё один шаг навстречу.</p></div>
-    <div class="block-room-intro"><span class="block-room-mark">♡</span><p class="eyebrow">ВАШЕ ПРОСТРАНСТВО ВДВОЁМ</p><h2>Выберите настроение вечера</h2><p>Каждый блок — отдельная тема для разговора. Начните с того, что откликается вам обоим.</p></div>
+    <div class="block-room-intro"><span class="block-room-mark">♡</span><h2>Выберите настроение вечера</h2><p>Каждый блок — отдельная тема для разговора. Начните с того, что откликается вам обоим.</p></div>
     <div class="block-heading"><strong>Все темы</strong><span>9 разделов · ваш общий путь</span></div>
     <div class="chips" id="chips" role="group" aria-label="Блоки"></div>
     <p class="block-room-foot">Не обязательно проходить всё сразу. Возвращайтесь к любому блоку, когда захотите ♡</p>
@@ -1581,7 +1581,13 @@ function pollTelegramStatus(sessionId,attempt){
   telegramApi("/api/telegram/status",{sessionId:sessionId}).then(function(data){
     if(data.status==="verified"){
       applyTelegramAccess(data);closePaywall();roomMsg("Подписка подтверждена! Все пять тем открыты 💗");
-      openBlock(pendingProtectedBlock||3);return;
+      if(ROOM&&MODE==="room"){
+        showBlockRoom();
+        window.scrollTo({top:0,behavior:"instant"});
+      }else{
+        openBlock(pendingProtectedBlock||3);
+      }
+      return;
     }
     telegramPollTimer=setTimeout(function(){pollTelegramStatus(sessionId,attempt+1)},2000);
   }).catch(function(error){
