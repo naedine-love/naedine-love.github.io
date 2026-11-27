@@ -2886,7 +2886,7 @@ answerGuess=async function(choice,button){
     clean.addEventListener("click",async function(){
       var code=ROOM&&ROOM.id;if(!code)return;
       var link=location.origin+location.pathname+"?source=pwa&room="+encodeURIComponent(code);
-      var message="Давай пройдём «Наедине» вместе ❤️ Я уже создал(а) нашу комнату! \nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗"+link+"\nКод комнаты на всякий случай: "+code;
+      var message="Давай пройдём «Наедине» вместе ❤️ Я уже создал(а) нашу комнату!\nНажми на ссылку — она сразу откроет нашу комнату, код вводить не нужно 💗\n"+link+"\nКод комнаты на всякий случай: "+code;
       try{
         if(navigator.share){await navigator.share({title:"Наша комната · Наедине",text:message});return}
         if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(message);roomMsg("Приглашение скопировано 💗");return}
