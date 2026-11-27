@@ -1776,13 +1776,38 @@ el("rcreate").onclick=async function(){
 async function joinRoomByCode(rawCode){
   saveName();var code=String(rawCode||"").trim().toUpperCase().replace(/\s+/g,"");
   if(!code){roomMsg("Введите код комнаты.");return false}
-  roomMsg("Входим в вашу комнату…");
-  try{await withTimeout(authP,12000,"auth-timeout");var ref=db.collection("rooms").doc(code),snap=await withTimeout(ref.get(),12000,"firestore-timeout");
-    if(!snap.exists){roomMsg("Комната не найдена. Проверьте приглашение.");return false}
-    var m=snap.data().members||[];
-    if(m.indexOf(UID)<0){if(m.length>=2){roomMsg("В этой комнате уже двое.");return false}m=[m[0],UID];await ref.update({members:m})}
-    enterRoom(code,m);roomMsg("");return true}
-  catch(e){roomMsg(errText(e));return false}
+  roomMsg("Подключаемся к комнате…");
+  try{
+    await withTimeout(authP,12000,"auth-timeout");
+    if(!UID||!firebase.auth().currentUser||firebase.auth().currentUser.uid!==UID)throw new Error("Не удалось подтвердить аккаунт. Обновите страницу и откройте приглашение ещё раз.");
+    var ref=db.collection("rooms").doc(code);
+    var snap=await withTimeout(ref.get(),12000,"firestore-timeout");
+    if(!snap.exists){roomMsg("Комната не найдена. Проверьте ссылку-приглашение.");return false}
+    var before=snap.data().members||[];
+    if(before.indexOf(UID)<0){
+      if(before.length>=2){roomMsg("В этой комнате уже двое.");return false}
+      if(before.length!==1||!before[0]){roomMsg("Не удалось проверить состав комнаты. Попросите создать новое приглашение.");return false}
+      if(before[0]===UID){roomMsg("Это тот же аккаунт, который создал комнату. Откройте приглашение на другом аккаунте.");return false}
+      await withTimeout(ref.update({members:[before[0],UID]}),12000,"room-join-write-timeout");
+    }
+    // Не показываем комнату как подключённую, пока Firestore не подтвердит UID.
+    var confirmed=await withTimeout(ref.get(),12000,"room-join-verify-timeout");
+    if(!confirmed.exists){roomMsg("Комната не найдена после подключения. Попробуйте открыть приглашение ещё раз.");return false}
+    var members=confirmed.data().members||[];
+    if(members.indexOf(UID)<0){
+      roomMsg("Firebase не подтвердил подключение второго участника. Обновите страницу и попробуйте ещё раз.");
+      console.error("Room membership verification failed", {room:code, memberCount:members.length});
+      return false;
+    }
+    enterRoom(code,members);roomMsg("");return true;
+  }catch(e){
+    console.error("Room invite join failed", {room:code,code:e&&e.code,message:e&&e.message});
+    var message=errText(e);
+    if(e&&e.code==="permission-denied")message="Firebase запретил добавление второго участника. Нужно проверить правила доступа Firestore.";
+    else if(e&&/room-join-(write|verify)-timeout/.test(e.message||""))message="Firebase не ответил при подключении. Проверьте интернет и откройте приглашение ещё раз.";
+    roomMsg(message||"Не удалось подключиться к комнате. Попробуйте открыть ссылку ещё раз.");
+    return false;
+  }
 }
 el("rjoin").onclick=function(){joinRoomByCode(el("rcode").value)};
 el("pcont").onclick=async function(){
