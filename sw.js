@@ -1,4 +1,4 @@
-const CACHE_NAME = "naedine-pwa-v69-compact-stage-cards-20261128-v32";
+const CACHE_NAME = "naedine-pwa-v70-restored-stage-progress-20261128-v33";
 const APP_SHELL = ["/full-k7x2m9.html", "/icon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
