@@ -1590,13 +1590,19 @@ function pollTelegramStatus(sessionId,attempt){
     var b=el("paywallUnlock");b.disabled=false;b.textContent="♡ Подписаться на Telegram";
   });
 }
+function revokeUnverifiedTelegramAccess(){
+  FULL=false;BLOCKS=[1,2];
+  [3,4,5,6,7].forEach(function(n){B[n]=[]});
+  try{localStorage.removeItem("kp_cached_protected_questions");localStorage.removeItem("kp_full_access")}catch(e){}
+  updateOverview();chips();
+}
 function restoreTelegramAccess(){
-  /* Проверяем сохранённое сервером право доступа для постоянного Firebase UID.
-     Локальный флажок не используем как условие — он может быть очищен браузером. */
+  /* Проверяем право доступа именно для текущей комнаты и Firebase UID. */
   telegramApi("/api/telegram/access",{roomCode:ROOM&&ROOM.id||""}).then(applyTelegramAccess).catch(function(error){
-    /* Preserve last verified questions on temporary network/API errors. */
-    /* Keep the room screen clean on temporary subscription-check failures.
-       Do not erase previously verified local access or display technical codes. */
+    /* A definite 403 must revoke the warm local cache; transient errors keep it. */
+    if(error&&(error.code==="telegram_not_linked"||error.code==="not_subscribed"||error.code==="not_room_member")){
+      revokeUnverifiedTelegramAccess();
+    }
     if(ROOM&&MODE==="room"){
       var status=el("roomAccessStatus");
       if(status){status.hidden=true;status.textContent="";}
