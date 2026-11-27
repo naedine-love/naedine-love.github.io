@@ -3081,38 +3081,24 @@ answerGuess=async function(choice,button){
 #couplePanelContent #customIdeaForm{margin-top:16px;padding:13px;border:1px solid #E9D7DE;border-radius:16px;background:#FBF4F6}
 </style>
 
-<style id="naedine-room-buttons-one-size-v14">
-/* One compact shared button geometry: all room controls match the share button. */
-#game #roomShareAgain,
-#game #roomRefresh,
-#game #rcopycode,
-#game #roomCodeCopy,
-#game #roomCodeInvite{
-  box-sizing:border-box!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-height:32px!important;
-  height:32px!important;
-  padding:0 10px!important;
-  margin:0!important;
-  border-radius:12px!important;
-  font:700 .68rem/1 Manrope,system-ui,sans-serif!important;
-  letter-spacing:0!important;
-  white-space:nowrap!important;
-  vertical-align:middle!important;
-  gap:4px!important;
+<style id="naedine-room-buttons-one-size-v15">
+/* Room action buttons: identical size and comfortable touch target. */
+#game #roombar{
+  display:flex!important;align-items:center!important;justify-content:flex-start!important;
+  flex-wrap:wrap!important;gap:10px!important;margin-left:auto!important;
 }
-#game #roomShareAgain,
-#game #roomRefresh,
-#game #rcopycode,
-#game #roomCodeCopy,
-#game #roomCodeInvite{
-  background:linear-gradient(135deg,#F4DDE8,#E6BED0)!important;
-  color:#795568!important;
-  border:1px solid #E2BDCE!important;
-  box-shadow:0 2px 7px rgba(145,83,111,.08)!important;
+#game #roombar #rcopycode{margin:0!important}
+#game #roomShareAgain,#game #roomRefresh,#game #rcopycode{
+  box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 1 270px!important;width:270px!important;max-width:100%!important;
+  min-width:0!important;height:64px!important;min-height:64px!important;max-height:64px!important;
+  padding:0 16px!important;margin:0!important;border-radius:20px!important;
+  font:700 1rem/1.2 Manrope,system-ui,sans-serif!important;white-space:normal!important;text-align:center!important;
+  background:linear-gradient(135deg,#F4DDE8,#E6BED0)!important;color:#795568!important;
+  border:1px solid #E2BDCE!important;box-shadow:0 5px 14px rgba(145,83,111,.12)!important;
+  text-decoration:none!important;gap:7px!important;
 }
-#game #roomShareAgain:before{content:none!important}
-#game #roomRefresh:before{content:none!important}
+#game #roomShareAgain:before,#game #roomRefresh:before{content:none!important}
+#game #roomRefresh:disabled{opacity:.7}
+@media(max-width:350px){#game #roomShareAgain,#game #roomRefresh,#game #rcopycode{flex-basis:100%!important;width:100%!important}}
 </style>
