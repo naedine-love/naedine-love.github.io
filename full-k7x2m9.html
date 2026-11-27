@@ -87,6 +87,16 @@ h1{font-family:"Lora",Georgia,"Times New Roman",serif;font-weight:600;font-size:
 .chip-history[aria-pressed="true"]{background:linear-gradient(110deg,#F5EAF6,#EDE1F2 58%,#F8F1F8)}
 .chip-history[aria-pressed="true"] .chip-title{color:#71517E}
 .chip-special[aria-pressed="true"] .chip-status{padding-right:62px}
+/* Keep conversation topic cards compact, close to the original layout */
+.chips{gap:10px}
+.chip:not(.chip-special){min-height:112px;gap:7px;padding:12px 13px;border-radius:18px;box-shadow:0 3px 10px rgba(115,75,72,.045)}
+.chip:not(.chip-special) .chip-icon{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:9px;font-size:1.08rem;box-shadow:none}
+.chip:not(.chip-special) .chip-number{font-size:.7rem;letter-spacing:.08em}
+.chip:not(.chip-special) .chip-title{font-size:.91rem;line-height:1.2}
+.chip:not(.chip-special) .chip-desc{font-size:.69rem;line-height:1.35}
+.chip:not(.chip-special) .chip-status{padding-top:0;border-top:0}
+@media(min-width:440px){.chip:not(.chip-special){min-height:118px;padding:14px}}
+
 .chip:active{transform:scale(.98)}
 .chip-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .chip-number{font-size:.7rem;font-weight:800;letter-spacing:.08em;color:#B9657C}
