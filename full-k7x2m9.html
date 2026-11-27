@@ -2008,7 +2008,7 @@ function draw(dir){
   });
 }
 function go(d){
-  if(d<0&&i===0){if(blk===16&&!FULL){blk=2;chips();list=make(blk);i=list.length-1;draw(-1);return}if(blk>1){blk-=1;chips();list=make(blk);i=list.length-1;draw(-1)}return}
+  if(d<0&&i===0){if(blk===8&&!FULL){blk=2;chips();list=make(blk);i=list.length-1;draw(-1);return}if(blk>1){blk-=1;chips();list=make(blk);i=list.length-1;draw(-1)}return}
   if(d>0&&i>=list.length){if(blk<lastBlock()){blk+=1;chips();build()}else{build()}return}
   if(d>0&&list[i]&&list[i].locked){var paidNote=el("card").querySelector(".paid-soon-btn");if(paidNote)paidNote.textContent="Оплата пока не подключена 💗";return}
   if(d>0&&list[i]&&list[i].bridge){pendingProtectedBlock=3;showPaywall();return}
@@ -2121,7 +2121,7 @@ function missingAnswers(block){
 }
 function renderFin(){
   var f=el("fin");
-  if(MODE!=="room"||blk>=16||(blk>=16&&blk<=15)){f.innerHTML="";f.style.display="none";return}
+  if(MODE!=="room"||blk>=16||(blk>=8&&blk<=15)){f.innerHTML="";f.style.display="none";return}
   f.style.display="";f.innerHTML="";f.className="";
   var d=DN[blk]||{},last=list.length-1;if(list[last]&&list[last].bridge)last--;
   var onLast=i>=last;
