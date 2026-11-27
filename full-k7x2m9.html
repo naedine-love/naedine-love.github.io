@@ -1175,6 +1175,25 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 @keyframes intimateReveal{from{opacity:0;transform:rotateX(-12deg) translateY(8px)}to{opacity:1;transform:rotateX(0) translateY(0)}}
 @media(prefers-reduced-motion:reduce){.intimate-card{animation:none}}
 
+
+/* Compact stage selector: title-first cards, no redundant helper copy */
+.chips{gap:7px!important;margin-bottom:12px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.chip:not(.chip-special){min-height:0!important;height:auto!important;padding:8px 10px!important;gap:4px!important;border-radius:13px!important;box-shadow:0 2px 7px rgba(90,70,70,.045)!important;overflow:hidden!important}
+.chip-top{gap:5px!important;min-height:18px}
+.chip:not(.chip-special) .chip-icon{width:19px!important;height:19px!important;font-size:.82rem!important;border-radius:6px!important}
+.chip:not(.chip-special) .chip-number{font-size:.57rem!important;letter-spacing:.06em!important}
+.chip:not(.chip-special) .chip-title{font-size:.76rem!important;line-height:1.16!important;font-weight:700!important}
+.chip:not(.chip-special) .chip-status{display:none!important}
+.chip-special{grid-column:auto!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:4px!important;min-height:62px!important;padding:8px 10px!important;border-radius:13px!important}
+.chip-special .chip-top{display:flex!important;grid-column:auto!important;grid-row:auto!important;align-self:stretch!important;justify-content:space-between!important}
+.chip-special .chip-number{display:none!important}
+.chip-special .chip-icon{width:20px!important;height:20px!important;font-size:.95rem!important;border-radius:6px!important}
+.chip-special .chip-title{font-size:.76rem!important;line-height:1.16!important}
+.chip-special .chip-desc{display:none!important}
+.chip-special .chip-status{display:none!important}
+.chip[aria-pressed="true"]:after{right:6px!important;bottom:5px!important;font-size:.52rem!important;padding:2px 5px!important}
+@media(min-width:440px){.chips{grid-template-columns:repeat(2,minmax(0,1fr))!important}.chip:not(.chip-special){min-height:0!important;padding:8px 10px!important}}
+
 </style>
 <style id="pact-results-visual-refresh-20261126">
 /* Стили отдельных разделов. Размещены в head, чтобы браузер применял их штатно. */
@@ -2059,18 +2078,10 @@ function chips(){
     var ico=document.createElement("span");ico.className="chip-icon";ico.textContent=lockedTelegram?"🔒":(lockedPaid?"🔐":m[0]);
     top.appendChild(num);top.appendChild(ico);
     var title=document.createElement("span");title.className="chip-title";var cleanTitle=TITLES[n],dot=cleanTitle.indexOf(". ");if(dot>0&&dot<4)cleanTitle=cleanTitle.slice(dot+2);title.textContent=cleanTitle;
-    var desc=document.createElement("span");desc.className="chip-desc";desc.textContent=m[2];
+
     var st=blockStats(n),status=document.createElement("span");status.className="chip-status"+(st.done?" done":((st.mine||st.partner||st.answered>0)?" wait":""));
     var dotEl=document.createElement("i");dotEl.className="status-dot";status.appendChild(dotEl);
-    var label=document.createElement("span");
-    if(lockedTelegram)label.textContent="Доступ по подписке Telegram";
-    else if(lockedPaid)label.textContent="2 вопроса бесплатно · остальные по оплате";
-    else if(st.done)label.textContent="Пройдено вместе";
-    else if(MODE==="room"&&st.mine)label.textContent=st.partner?"Открываем ответы…":"Вы завершили · ждём партнёра";
-    else if(MODE==="room"&&st.partner)label.textContent="Партнёр завершил · ваш ход";
-    else if(st.answered>0)label.textContent=st.answered+" из "+st.total+" ответов";
-    else label.textContent=n===16?"Ваши общие правила":n===17?"Сохранённые ответы":(n<=2?"Можно начать в любой момент":"Откройте тему и начните разговор");
-    b.appendChild(top);b.appendChild(title);b.appendChild(desc);b.appendChild(status);b.appendChild(label);
+    b.appendChild(top);b.appendChild(title);b.appendChild(status);
     b.addEventListener("click",function(){if(lockedTelegram){pendingProtectedBlock=n;showPaywall();return}openBlock(n)});
     w.appendChild(b);
   });
