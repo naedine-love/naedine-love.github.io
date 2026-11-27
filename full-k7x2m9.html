@@ -87,15 +87,16 @@ h1{font-family:"Lora",Georgia,"Times New Roman",serif;font-weight:600;font-size:
 .chip-history[aria-pressed="true"]{background:linear-gradient(110deg,#F5EAF6,#EDE1F2 58%,#F8F1F8)}
 .chip-history[aria-pressed="true"] .chip-title{color:#71517E}
 .chip-special[aria-pressed="true"] .chip-status{padding-right:62px}
-/* Keep conversation topic cards compact, close to the original layout */
-.chips{gap:10px}
-.chip:not(.chip-special){min-height:112px;gap:7px;padding:12px 13px;border-radius:18px;box-shadow:0 3px 10px rgba(115,75,72,.045)}
-.chip:not(.chip-special) .chip-icon{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:9px;font-size:1.08rem;box-shadow:none}
-.chip:not(.chip-special) .chip-number{font-size:.7rem;letter-spacing:.08em}
-.chip:not(.chip-special) .chip-title{font-size:.91rem;line-height:1.2}
-.chip:not(.chip-special) .chip-desc{font-size:.69rem;line-height:1.35}
-.chip:not(.chip-special) .chip-status{padding-top:0;border-top:0}
-@media(min-width:440px){.chip:not(.chip-special){min-height:118px;padding:14px}}
+/* Keep ALL seven conversation stages equally compact; content must not stretch earlier cards */
+.chips{gap:10px;align-items:start}
+.chip:not(.chip-special){height:112px!important;min-height:112px!important;max-height:112px!important;gap:5px;padding:9px 11px;border-radius:18px;box-shadow:0 3px 10px rgba(115,75,72,.045);overflow:hidden}
+.chip:not(.chip-special) .chip-icon{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:8px;font-size:1rem;box-shadow:none}
+.chip:not(.chip-special) .chip-number{font-size:.66rem;letter-spacing:.08em}
+.chip:not(.chip-special) .chip-title{font-size:.88rem;line-height:1.15}
+.chip:not(.chip-special) .chip-desc{font-size:.66rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.chip:not(.chip-special) .chip-status{padding-top:0;border-top:0;font-size:.61rem;line-height:1.15;display:flex;align-items:flex-start}
+.chip:not(.chip-special) .chip-status>span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media(min-width:440px){.chip:not(.chip-special){height:112px!important;min-height:112px!important;max-height:112px!important;padding:9px 11px}}
 
 .chip:active{transform:scale(.98)}
 .chip-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
