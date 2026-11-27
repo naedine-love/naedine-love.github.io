@@ -2916,15 +2916,22 @@ answerGuess=async function(choice,button){
   // Refresh only the room data: do not reload the document / bounce to the lobby.
   var rb=document.getElementById("roomRefresh");
   if(rb){var fresh=rb.cloneNode(true);rb.parentNode.replaceChild(fresh,rb);fresh.addEventListener("click",async function(){
-    var code=ROOM&&ROOM.id;if(!code)return;
+    var code=ROOM&&ROOM.id;
+    if(!code){roomMsg("Сначала откройте комнату.");return}
     fresh.disabled=true;fresh.textContent="↻ Обновляем…";
     try{
       await withTimeout(authP,12000,"auth-timeout");
-      var snap=await withTimeout(db.collection("rooms").doc(code).get(),12000,"firestore-timeout");
-      if(!snap.exists||!(snap.data().members||[]).includes(UID)){roomMsg("Комната больше недоступна.");return}
-      enterRoom(code,snap.data().members||[]);showBlockRoom();await restoreTelegramAccess();roomMsg("Комната обновлена 💗");
-    }catch(e){roomMsg(errText(e)||"Не удалось обновить комнату.")}
-    finally{fresh.disabled=false;fresh.textContent="↻ Обновить"}
+      // Reuse the same verified join flow as an invitation: it confirms the
+      // current Firebase UID is still a member before restoring the room UI.
+      var joined=await withTimeout(joinRoomByCode(code),25000,"room-refresh-timeout");
+      if(!joined)return;
+      showBlockRoom();
+      window.scrollTo({top:0,behavior:"instant"});
+      roomMsg("Комната обновлена 💗");
+    }catch(e){
+      console.error("Room refresh failed",{room:code,code:e&&e.code,message:e&&e.message});
+      roomMsg(e&&e.message==="room-refresh-timeout"?"Комната долго отвечает. Проверьте интернет и попробуйте ещё раз.":(errText(e)||"Не удалось обновить комнату."));
+    }finally{fresh.disabled=false;fresh.textContent="↻ Обновить"}
   });}
   // Share the requested, readable invitation format and direct room URL.
   var sb=document.getElementById("roomShareAgain");
