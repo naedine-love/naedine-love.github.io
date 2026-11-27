@@ -1176,24 +1176,6 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 @media(prefers-reduced-motion:reduce){.intimate-card{animation:none}}
 
 
-/* Compact stage selector: title-first cards, no redundant helper copy */
-.chips{gap:7px!important;margin-bottom:12px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
-.chip:not(.chip-special){min-height:0!important;height:auto!important;padding:8px 10px!important;gap:4px!important;border-radius:13px!important;box-shadow:0 2px 7px rgba(90,70,70,.045)!important;overflow:hidden!important}
-.chip-top{gap:5px!important;min-height:18px}
-.chip:not(.chip-special) .chip-icon{width:19px!important;height:19px!important;font-size:.82rem!important;border-radius:6px!important}
-.chip:not(.chip-special) .chip-number{font-size:.57rem!important;letter-spacing:.06em!important}
-.chip:not(.chip-special) .chip-title{font-size:.76rem!important;line-height:1.16!important;font-weight:700!important}
-.chip:not(.chip-special) .chip-status{display:none!important}
-.chip-special{grid-column:auto!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:4px!important;min-height:62px!important;padding:8px 10px!important;border-radius:13px!important}
-.chip-special .chip-top{display:flex!important;grid-column:auto!important;grid-row:auto!important;align-self:stretch!important;justify-content:space-between!important}
-.chip-special .chip-number{display:none!important}
-.chip-special .chip-icon{width:20px!important;height:20px!important;font-size:.95rem!important;border-radius:6px!important}
-.chip-special .chip-title{font-size:.76rem!important;line-height:1.16!important}
-.chip-special .chip-desc{display:none!important}
-.chip-special .chip-status{display:none!important}
-.chip[aria-pressed="true"]:after{right:6px!important;bottom:5px!important;font-size:.52rem!important;padding:2px 5px!important}
-@media(min-width:440px){.chips{grid-template-columns:repeat(2,minmax(0,1fr))!important}.chip:not(.chip-special){min-height:0!important;padding:8px 10px!important}}
-
 </style>
 <style id="pact-results-visual-refresh-20261126">
 /* Стили отдельных разделов. Размещены в head, чтобы браузер применял их штатно. */
@@ -1236,6 +1218,30 @@ a,a *,button,button *,[role="button"],[role="button"] *, .menu-btn,.menu-btn *, 
 @keyframes naedine-card-turn{0%{opacity:.25;transform:perspective(900px) translateX(var(--dx,16px)) rotateY(calc(var(--dx,16px)*.22)) translateY(5px) scale(.985);filter:blur(1.5px)}65%{opacity:1;filter:blur(0)}100%{opacity:1;transform:perspective(900px) translateX(0) rotateY(0) translateY(0) scale(1);filter:none}}
 @media(max-width:380px){#lobby #pact,#lobby #res{padding:17px 12px!important}#lobby #pact .prow,#lobby #res .prow{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){#game .card.swap{animation:none!important}}
+</style>
+
+<style id="naedine-stage-cards-restored-v33">
+/* Возвращаем информативные карточки этапов с прогрессом обоих участников. */
+.chips{gap:10px!important;margin-bottom:16px!important;align-items:stretch!important}
+.chip:not(.chip-special){min-height:156px!important;height:auto!important;padding:12px 13px!important;gap:7px!important;border-radius:19px!important;overflow:visible!important}
+.chip:not(.chip-special) .chip-top{min-height:25px!important}
+.chip:not(.chip-special) .chip-icon{width:28px!important;height:28px!important;font-size:1.05rem!important;border-radius:9px!important}
+.chip:not(.chip-special) .chip-number{font-size:.63rem!important;letter-spacing:.08em!important}
+.chip:not(.chip-special) .chip-title{font-size:.88rem!important;line-height:1.2!important}
+.chip:not(.chip-special) .chip-desc{display:block!important;font-size:.67rem!important;line-height:1.3!important}
+.chip:not(.chip-special) .chip-status{display:flex!important;padding-top:5px!important;border-top:1px solid #EFE5E0!important;font-size:.61rem!important}
+.chip-progress{display:block!important;white-space:pre-line!important;color:#8C7180!important;font:700 .61rem/1.45 Manrope,system-ui,sans-serif!important;padding-top:1px!important}
+.chip[aria-pressed="true"] .chip-progress{color:#765064!important}
+.chip-special{grid-column:auto!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;gap:5px!important;min-height:76px!important;padding:10px 12px!important;border-radius:16px!important}
+.chip-special .chip-top{display:flex!important;align-self:stretch!important;justify-content:space-between!important;min-height:20px!important}
+.chip-special .chip-number{display:none!important}
+.chip-special .chip-icon{width:25px!important;height:25px!important;font-size:1.05rem!important;border-radius:8px!important}
+.chip-special .chip-title{font-size:.8rem!important;line-height:1.18!important}
+.chip-special .chip-desc{display:none!important}
+.chip-special .chip-status{display:none!important}
+.chip-special .chip-progress{font-size:.59rem!important}
+.chip[aria-pressed="true"]:after{right:7px!important;bottom:7px!important;font-size:.56rem!important;padding:2px 6px!important}
+@media(min-width:440px){.chip:not(.chip-special){min-height:150px!important}}
 </style>
 </head>
 <body>
@@ -1735,7 +1741,7 @@ function scheduleProgress(b){if(MODE!=="room")return;clearTimeout(progressTimers
 function updateLiveTally(){
   if(!el("liveTally"))return;
   if(MODE!=="room"||blk>=16){el("liveTally").style.display="none";return}
-  el("liveTally").style.display="";var total=(blk>=16&&blk<=15)?15:B[blk].length,pg=PRG[blk]||{},me=answerCount(blk),partner=pg.partner||0;
+  el("liveTally").style.display="";var total=(blk>=8&&blk<=15)?15:B[blk].length,pg=PRG[blk]||{},me=answerCount(blk),partner=pg.partner||0;
   el("myTally").textContent="Вы: "+me+" из "+total;
   el("partnerTally").textContent="Партнёр: "+partner+" из "+total;
   el("tallyNote").textContent=(DN[blk]&&DN[blk].me)?"Вы завершили блок. Ждём, пока партнёр закончит.":"Количество ответов видно обоим, содержание ответов остаётся скрытым до завершения блока.";
@@ -2078,10 +2084,26 @@ function chips(){
     var ico=document.createElement("span");ico.className="chip-icon";ico.textContent=lockedTelegram?"🔒":(lockedPaid?"🔐":m[0]);
     top.appendChild(num);top.appendChild(ico);
     var title=document.createElement("span");title.className="chip-title";var cleanTitle=TITLES[n],dot=cleanTitle.indexOf(". ");if(dot>0&&dot<4)cleanTitle=cleanTitle.slice(dot+2);title.textContent=cleanTitle;
-
+    var desc=document.createElement("span");desc.className="chip-desc";desc.textContent=m[2];
     var st=blockStats(n),status=document.createElement("span");status.className="chip-status"+(st.done?" done":((st.mine||st.partner||st.answered>0)?" wait":""));
     var dotEl=document.createElement("i");dotEl.className="status-dot";status.appendChild(dotEl);
-    b.appendChild(top);b.appendChild(title);b.appendChild(status);
+    var progress=document.createElement("span");progress.className="chip-progress";
+    if(n<=15){
+      var total=st.total||15,mine=0,partner=0;
+      for(var q=0;q<Math.min(total,(B[n]||[]).length);q++){
+        if(String(sget(K(n,q,1))||"").trim())mine++;
+        if(String(sget(K(n,q,2))||"").trim())partner++;
+      }
+      if(MODE==="room"){
+        var pg=PRG[n]||{};partner=Math.max(partner,Number(pg.partner)||0);
+        progress.textContent="Все вопросы: "+Math.min(mine,partner)+" / "+total+"\nВы: "+mine+" / "+total+" · Партнёр: "+partner+" / "+total;
+      }else{
+        progress.textContent="Все вопросы: "+Math.min(mine,partner)+" / "+total+"\nВы: "+mine+" / "+total+" · Партнёр: "+partner+" / "+total;
+      }
+    }else{
+      progress.textContent=n===16?"Ваши общие правила":"Сохранённые ответы";
+    }
+    b.appendChild(top);b.appendChild(title);b.appendChild(desc);b.appendChild(status);b.appendChild(progress);
     b.addEventListener("click",function(){if(lockedTelegram){pendingProtectedBlock=n;showPaywall();return}openBlock(n)});
     w.appendChild(b);
   });
