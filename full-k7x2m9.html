@@ -2853,12 +2853,6 @@ answerGuess=async function(choice,button){
         var tools=document.getElementById("coupleTools");
         if(tools){tools.style.display="block";tools.querySelectorAll(".couple-category").forEach(function(n){n.style.display="none"})}
         var panel=document.getElementById("couplePanel");if(panel)panel.hidden=true;
-        var intro=document.querySelector("#blockRoom .block-room-intro");
-        if(intro&&!document.getElementById("localTruthDareEntry")){
-          var b=document.createElement("button");b.id="localTruthDareEntry";b.type="button";b.className="btn main local-truth-entry";b.textContent="♡ Правда или действие · передавайте телефон";
-          b.addEventListener("click",function(){if(typeof openCouplePanel==="function")openCouplePanel("truthSolo");var p=document.getElementById("couplePanel");if(p){p.hidden=false;p.style.display="block";p.classList.add("local-truth-panel")}});
-          intro.appendChild(b);
-        }
       }
       return result;
     };
@@ -2866,7 +2860,7 @@ answerGuess=async function(choice,button){
   var games=document.querySelector('[data-couple-category-content="games"]');
   if(games){games.querySelectorAll('[data-couple-open="truth"],[data-couple-open="truthSolo"]').forEach(function(n){n.remove()});var heading=document.querySelector('[data-couple-category="games"] small');if(heading)heading.textContent="Угадай меня · Идеи для свидания";}
   var style=document.createElement("style");
-  style.textContent="#game #roomShareAgain,#game #roomRefresh{box-sizing:border-box;min-height:40px;padding:9px 13px;border:1px solid #E8CAD6;border-radius:15px;background:linear-gradient(145deg,#FFF9FB,#F5E3EB);color:#785568;font:700 .76rem/1.2 Manrope,system-ui,sans-serif;box-shadow:0 4px 11px rgba(145,83,111,.10);text-decoration:none!important}#game #roomShareAgain{background:linear-gradient(135deg,#E7B8CB,#D9A1B8);color:#fff;border-color:#D19AB0}#game #roomRefresh{background:linear-gradient(145deg,#F1F7F1,#E5F0E8);color:#4E705E;border-color:#D4E5D8}#game #roomShareAgain:before{content:'♡ ';font-size:1rem}#game #roomRefresh:before{content:'↻ ';font-size:1rem}.local-truth-entry{width:100%;margin-top:14px;min-height:54px;border-radius:17px;background:linear-gradient(135deg,#DDA8BC,#C985A1);border:1px solid #CD91A8;color:#fff;font-weight:800;box-shadow:0 7px 17px rgba(174,103,133,.18)}#couplePanel.local-truth-panel{display:block!important}";
+  style.textContent="#game #roomShareAgain,#game #roomRefresh{box-sizing:border-box;min-height:40px;padding:9px 13px;border:1px solid #E8CAD6;border-radius:15px;background:linear-gradient(145deg,#FFF9FB,#F5E3EB);color:#785568;font:700 .76rem/1.2 Manrope,system-ui,sans-serif;box-shadow:0 4px 11px rgba(145,83,111,.10);text-decoration:none!important}#game #roomShareAgain{background:linear-gradient(135deg,#E7B8CB,#D9A1B8);color:#fff;border-color:#D19AB0}#game #roomRefresh{background:linear-gradient(145deg,#F1F7F1,#E5F0E8);color:#4E705E;border-color:#D4E5D8}#game #roomShareAgain:before{content:'♡ ';font-size:1rem}#game #roomRefresh:before{content:'↻ ';font-size:1rem}#couplePanel.local-truth-panel{display:block!important}";
   document.head.appendChild(style);
   var joinBase=window.joinRoomByCode;
   if(typeof joinBase==="function"){window.joinRoomByCode=async function(code){var joined=await joinBase.apply(this,arguments);if(joined){try{await restoreTelegramAccess()}catch(e){}}return joined;};}
